@@ -1,24 +1,34 @@
 import DashBoard from "./pages/dashboard";
 import "./App.css";
-
+import { useState } from "react";
 function App() {
+  const [ping, showPing] = useState(null);
 
-  async function pongReq(){
-
-    const response = await fetch("http://localhost:8000/pong")
+  async function pongReq() {
+    const response = await fetch("http://localhost:8000/pong");
     const holder = await response.json();
+    showPing(holder);
 
-    console.log(holder)
+    setTimeout(() => {
+      closePong();
+    }, 1000);
+  }
 
-    console.log("write the endpoint dumbass");
+  function closePong() {
+    showPing(null);
   }
 
   return (
     <>
       <DashBoard></DashBoard>
-      
-      <button onClick={()=> pongReq()}>Ping</button>
 
+      <button onClick={() => pongReq()}>Ping</button>
+
+      {ping && (
+        <div>
+          <h2>pong</h2>
+        </div>
+      )}
     </>
   );
 }
