@@ -14,6 +14,7 @@ lookUpTable = {}
 def observe(pkt):
 
     print(f"{pkt.summary()} length: {len(pkt)}")
+    pkt.show()
 
     
     if("Ether" not in pkt):
@@ -44,7 +45,7 @@ def observe(pkt):
     
     if(ipDst in lookUpTable):
         print(lookUpTable[ipDst])
-        deviceTable[lookUpTable[ipDst]]["Uploads"] += len(pkt)
+        deviceTable[lookUpTable[ipDst]]["Downloads"] += len(pkt)
         
 
     
@@ -53,10 +54,10 @@ sniff(iface=homePc,timeout=20,prn=observe)
 
 for device in deviceTable:
     print("-------------------------")
-    print(device)
-    print(deviceTable[device]["IpAddress"])
-    print(deviceTable[device]["Uploads"])
-    print(deviceTable[device]["Downloads"])
+    print(f"MAC Address: {device}")
+    print(f"IP Address: {deviceTable[device]['IpAddress']}")
+    print(f"Uploads: {deviceTable[device]["Uploads"]}")
+    print(f"Downloads: {deviceTable[device]["Downloads"]}")
     
 
     
