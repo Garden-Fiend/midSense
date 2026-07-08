@@ -1,6 +1,10 @@
 
 from scapy.all import *
 
+homePc = "Microsoft Wi-Fi Direct Virtual Adapter #4"
+officePc = "Microsoft Wi-Fi Direct Virtual Adapter #2"
+
+
 print("Observation Starting")
 
 deviceTable = {}
@@ -8,7 +12,7 @@ deviceTable = {}
 
 def observe(pkt):
 
-    pkt.show()
+    print(f"{pkt.summary()} length: {len(pkt)}")
 
     
     if("Ether" not in pkt):
@@ -18,7 +22,7 @@ def observe(pkt):
         return
     
     macSrc = pkt["Ether"].src
-    ipSrc = pkt["IP"].dst
+    ipSrc = pkt["IP"].src
     ipDst = pkt["IP"].dst
 
     if(macSrc not in deviceTable):
@@ -28,15 +32,15 @@ def observe(pkt):
             "Downloads":0
         }
 
-    deviceTable[macSrc].IpAddress = ipSrc
+    deviceTable[macSrc]["IpAddress"] = ipSrc
 
-    if (ipSrc == deviceTable[macSrc].IpAddress):
-        deviceTable[macSrc].Uploads += len(pkt)
+    if (ipSrc == deviceTable[macSrc]["IpAddress"]):
+        deviceTable[macSrc]["Uploads"] += len(pkt)
     
-    if(ipDst == deviceTable[macSrc].IpAddress):
-        deviceTable[macSrc].Downloads += len(pkt)
+    if(ipDst == deviceTable[macSrc]["IpAddress"]):
+        deviceTable[macSrc]["Downloads"] += len(pkt)
 
-sniff(iface="Microsoft Wi-Fi Direct Virtual Adapter #2",count=30,prn=observe)
+sniff(iface=homePc,timeout=60,prn=observe)
 
 print(deviceTable)
 
