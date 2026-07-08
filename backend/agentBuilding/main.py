@@ -10,8 +10,6 @@ def showStats(pkt):
     src = pkt["Ether"].src
     dst = pkt["Ether"].dst
 
-
-
     if("Ether" in pkt):
         if  src not in deviceStats:
             deviceStats[src] = {
@@ -22,7 +20,7 @@ def showStats(pkt):
         deviceStats[src]["Packet_Length"] += len(pkt)
 
 
-packet = sniff(iface="Microsoft Wi-Fi Direct Virtual Adapter #4", timeout=60, prn = showStats)
+packet = sniff(iface="Microsoft Wi-Fi Direct Virtual Adapter #2", timeout=60, prn = showStats)
 
 print("Observation finished")
 
