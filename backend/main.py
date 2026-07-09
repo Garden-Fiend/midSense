@@ -1,7 +1,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+import json
 
 app = FastAPI()
 
@@ -26,5 +26,5 @@ def pong():
 @app.post("/incomingPackets")
 def incomingPacket(data:dict):
     print("Packets recived: ")
-    print(data)
+    print(json.dumps(data,indent=4))
     return{"status":"recieved"}
