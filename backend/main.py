@@ -22,3 +22,9 @@ def root():
 
 def pong():
     return {"response": "pong"}
+
+@app.post("/incomingPackets")
+def incomingPacket(data:dict):
+    print("Packets recived: ")
+    print(data)
+    return{"status":"recieved"}

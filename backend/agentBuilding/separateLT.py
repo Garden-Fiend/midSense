@@ -1,5 +1,6 @@
 
 from scapy.all import *
+import requests
 
 homePc = "Microsoft Wi-Fi Direct Virtual Adapter #4"
 officePc = "Local Area Connection* 2"
@@ -80,7 +81,7 @@ def observe(pkt):
 
     
 
-sniff(iface=officePc,timeout=240,prn=observe)
+sniff(iface=officePc,timeout=5,prn=observe)
 
 for device in deviceTable:
     print("-------------------------")
@@ -88,6 +89,11 @@ for device in deviceTable:
     print(f"IP Address: {deviceTable[device]['IpAddress']}")
     print(f"Uploads: {byteCon(deviceTable[device]['Uploads'])}")
     print(f"Downloads: {byteCon(deviceTable[device]['Downloads'])}")
+
+r = requests.post("http://127.0.0.1:8000/incomingPackets",json=deviceTable)
+
+
+
     
 
     
