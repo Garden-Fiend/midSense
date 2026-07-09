@@ -2,19 +2,53 @@
 from scapy.all import *
 
 homePc = "Microsoft Wi-Fi Direct Virtual Adapter #4"
-officePc = "Microsoft Wi-Fi Direct Virtual Adapter #2"
+officePc = "Local Area Connection* 2"
+
+def byteCon(bytes):
+    if bytes < 1000:
+        return
+    elif bytes < 1000000:
+        return f"{bytes/1000} kb"
+    elif bytes < 1000000000:
+        return f"{bytes/1000000} mb"
+    elif bytes < 1000000000000:
+        return f"{bytes/1000000000} gb" 
+    
 
 
-print("Observation Starting")
+
+print("Observation Started")
 
 deviceTable = {}
 lookUpTable = {}
 
 
+print("Configuring Gateway details")
+
+def huntGateway(targetIface):
+    for interface in conf.ifaces.values():
+        if(interface.name == targetIface):
+            return interface 
+
+gateway = huntGateway(officePc)
+
+print("Gateway details obtained")
+
+lookUpTable[gateway.ip] = gateway.mac
+deviceTable[gateway.mac] = {
+    "IpAddress" : gateway.ip,
+    "Uploads" : 0,
+    "Downloads" : 0
+}
+
+print(lookUpTable)
+print(deviceTable)
+print("Gateway added to lookup table")
+
+
 def observe(pkt):
 
     print(f"{pkt.summary()} length: {len(pkt)}")
-    pkt.show()
 
     
     if("Ether" not in pkt):
@@ -29,35 +63,31 @@ def observe(pkt):
 
     if(macSrc not in deviceTable):
         deviceTable[macSrc]={
-            "IpAddress" : "",
+            "IpAddress" : ipSrc,
             "Uploads":0,
             "Downloads":0
         }
         
         lookUpTable[ipSrc] = macSrc
-
-    deviceTable[macSrc]["IpAddress"] = ipSrc
     
     
     if(ipSrc in lookUpTable):
-        print(lookUpTable[ipSrc])
         deviceTable[lookUpTable[ipSrc]]["Uploads"] += len(pkt)
     
     if(ipDst in lookUpTable):
-        print(lookUpTable[ipDst])
         deviceTable[lookUpTable[ipDst]]["Downloads"] += len(pkt)
         
 
     
 
-sniff(iface=homePc,timeout=20,prn=observe)
+sniff(iface=officePc,timeout=240,prn=observe)
 
 for device in deviceTable:
     print("-------------------------")
     print(f"MAC Address: {device}")
     print(f"IP Address: {deviceTable[device]['IpAddress']}")
-    print(f"Uploads: {deviceTable[device]["Uploads"]}")
-    print(f"Downloads: {deviceTable[device]["Downloads"]}")
+    print(f"Uploads: {byteCon(deviceTable[device]['Uploads'])}")
+    print(f"Downloads: {byteCon(deviceTable[device]['Downloads'])}")
     
 
     

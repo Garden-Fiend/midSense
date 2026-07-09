@@ -40,7 +40,7 @@ def observe(pkt):
     if (ipSrc == deviceTable[macSrc]["IpAddress"]):
         deviceTable[macSrc]["Uploads"] += len(pkt)
     
-    elif(ipDst == deviceTable[macSrc]["IpAddress"]):
+    elif(ipDst == officePc[macSrc]["IpAddress"]):
         deviceTable[macSrc]["Downloads"] += len(pkt)
 
 sniff(iface=homePc,timeout=60,prn=observe)
