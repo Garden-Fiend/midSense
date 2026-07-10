@@ -6,6 +6,8 @@ homePc = "Microsoft Wi-Fi Direct Virtual Adapter #4"
 officePc = "Local Area Connection* 2"
 temporary = "Ethernet"
 
+selectedNic = officePc
+
 def byteCon(bytes):
     if bytes < 1000:
         return
@@ -32,7 +34,7 @@ def huntGateway(targetIface):
         if(interface.name == targetIface):
             return interface 
 
-gateway = huntGateway(temporary)
+gateway = huntGateway(selectedNic)
 
 print("Gateway details obtained")
 
@@ -82,7 +84,8 @@ def observe(pkt):
 
     
 
-sniff(iface=temporary,timeout=5,prn=observe)
+
+sniff(iface=selectedNic,timeout=5,prn=observe)
 
 for device in deviceTable:
     print("-------------------------")
@@ -92,6 +95,7 @@ for device in deviceTable:
     print(f"Downloads: {byteCon(deviceTable[device]['Downloads'])}")
 
 r = requests.post("http://127.0.0.1:8000/incomingPackets",json=deviceTable)
+
 
 
 

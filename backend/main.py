@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import json
 
+packetCaptured = []
+
 app = FastAPI()
 
 app.add_middleware(
@@ -27,4 +29,13 @@ def pong():
 def incomingPacket(data:dict):
     print("Packets recived: ")
     print(json.dumps(data,indent=4))
+    packetCaptured.append(data)
+
     return{"status":"recieved"}
+
+@app.get("/getPackets")
+def getPacket():
+    if len(packetCaptured) < 1:
+        return "No data captured yet"
+    else:
+        return packetCaptured
