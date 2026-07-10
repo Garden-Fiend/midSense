@@ -24,26 +24,29 @@ function App() {
     <>
       <div className="bg-black text-white h-screen font-mono flex justify-center items-center">
         <div>
-          <button
-            onClick={() => getStat()}
-            className="border-2 rounded-lg p-1 hover:scale-105"
-          >
-            show stats
-          </button>
-        </div>
-        {packet && (
           <div>
-            <table className="border-2">
-              <thead>
-                <tr>
-                  {Object.keys(packet).map((header) => (
-                    <th key={header}>{header}</th>
-                  ))}
-                </tr>
-              </thead>
-            </table>
+            <button
+              onClick={() => getStat()}
+              className="border-2 rounded-lg p-1 hover:scale-105"
+            >
+              show stats
+            </button>
           </div>
-        )}
+          {packet && (
+            <div>
+              <table className="border-2">
+                <thead>
+                  {Object.keys(packet).map((header) => (
+                    <tr key={header}>
+                      <td>{header}</td>
+                
+                    </tr>
+                  ))}
+                </thead>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
