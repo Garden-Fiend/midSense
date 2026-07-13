@@ -1,5 +1,5 @@
 import "./index.css";
-import { useState } from "react";
+import { act, useState } from "react";
 function App() {
   interface Packet {
     Downloads: Number;
@@ -34,15 +34,31 @@ function App() {
           </div>
           {packet && (
             <div>
-              <table className="border-2">
-                <thead>
-                  {Object.keys(packet).map((header) => (
-                    <tr key={header}>
-                      <td>{header}</td>
-                
+              <table className="my-4">
+                <thead className="border-2">
+                  <th>
+                    MAC Address
+                  </th>
+                  <th>
+                    Ip Address
+                  </th>
+                  <th>
+                    Uploads
+                  </th>
+                  <th>
+                    Downloads
+                  </th>
+                </thead>
+                <tbody>
+                  {Object.entries(packet).map(([key, value]) => (
+                    <tr key={key}>
+                      <td className="p-2 border-2">{key}</td>
+                      {Object.entries(value).map(([atkey, atval]) => (
+                        <td className="p-2 border-2" key={atkey.toString()}>{atval}</td>
+                      ))}
                     </tr>
                   ))}
-                </thead>
+                </tbody>
               </table>
             </div>
           )}

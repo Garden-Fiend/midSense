@@ -85,7 +85,7 @@ def observe(pkt):
     
 
 
-sniff(iface=selectedNic,timeout=5,prn=observe)
+sniff(iface=selectedNic,timeout=60,prn=observe)
 
 for device in deviceTable:
     print("-------------------------")

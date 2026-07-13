@@ -19,3 +19,9 @@ console.log(Object.keys(Packets).map((header)=> header))
 
 console.log("CONTENTS:")
 console.log(Object.values(Packets).map((packet)=> packet))
+console.log("Entries")
+Object.entries(Packets).map(([key,value])=> {console.log(key), Object.entries(value).map(([atkey,atval]) => {console.log(atkey,atval)})})
+
+console.log("HEADERS")
+
+Object.values(Packets).map((headers)=> {console.log(Object.keys(headers))})
