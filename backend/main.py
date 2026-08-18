@@ -29,6 +29,8 @@ def byteCon(bytes):
     elif bytes < 1000000000000:
         return f"{bytes/1000000000} gb" 
 
+#identified a problem, because I'm storing the formatted up and downs they cannot be stacked with an int value since they are strings now, considering moving the formmating fully to the frontend but more research needed. 
+
 def cumulatePackets(data):
     print("Cumulating the Cumulatives or something")
     macAddresses = data.keys()

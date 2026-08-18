@@ -101,11 +101,13 @@ function App() {
                   {Object.entries(packet).map(([key, value]) => (
                     <tr key={key}>
                       <td className="p-2 border-2">{key}</td>
+
                       {Object.entries(value).map(([atkey, atval]) => (
                         <td className="p-2 border-2" key={atkey.toString()}>
                           {atval}
                         </td>
                       ))}
+                      
                     </tr>
                   ))}
                 </tbody>
