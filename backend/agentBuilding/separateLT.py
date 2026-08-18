@@ -83,18 +83,19 @@ def observe(pkt):
         
 
     
+while True:
+    
+    sniff(iface=selectedNic,timeout=20,prn=observe)
 
+    for device in deviceTable:
+        print("-------------------------")
+        print(f"MAC Address: {device}")
+        print(f"IP Address: {deviceTable[device]['IpAddress']}")
+        print(f"Uploads: {byteCon(deviceTable[device]['Uploads'])}")
+        print(f"Downloads: {byteCon(deviceTable[device]['Downloads'])}")
 
-sniff(iface=selectedNic,timeout=60,prn=observe)
+    r = requests.post("http://127.0.0.1:8000/incomingPackets",json=deviceTable)
 
-for device in deviceTable:
-    print("-------------------------")
-    print(f"MAC Address: {device}")
-    print(f"IP Address: {deviceTable[device]['IpAddress']}")
-    print(f"Uploads: {byteCon(deviceTable[device]['Uploads'])}")
-    print(f"Downloads: {byteCon(deviceTable[device]['Downloads'])}")
-
-r = requests.post("http://127.0.0.1:8000/incomingPackets",json=deviceTable)
 
 
 

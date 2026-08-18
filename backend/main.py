@@ -1,9 +1,11 @@
 
-from fastapi import FastAPI
+from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from agentBuilding.networkObserver import startObservation
 import json
 
 packetCaptured = []
+packetSnapshots = []
 
 app = FastAPI()
 
@@ -16,6 +18,34 @@ app.add_middleware(
 
 )
 
+
+def byteCon(bytes):
+    if bytes < 1000:
+        return
+    elif bytes < 1000000:
+        return f"{bytes/1000} kb"
+    elif bytes < 1000000000:
+        return f"{bytes/1000000} mb"
+    elif bytes < 1000000000000:
+        return f"{bytes/1000000000} gb" 
+
+def cumulatePackets(data):
+    print("Cumulating the Cumulatives or something")
+    macAddresses = data.keys()
+    
+    for mac in macAddresses:   
+        packetCaptured[0][mac]["Uploads"] += data[mac]["Uploads"]
+        packetCaptured[0][mac]["Downloads"] += data[mac]["Downloads"]
+        
+        packetCaptured[0][mac]["Uploads"] = byteCon(packetCaptured[0][mac]["Uploads"])
+        packetCaptured[0][mac]["Downloads"] = byteCon(packetCaptured[0][mac]["Downloads"])
+    
+    return packetCaptured
+
+
+                
+    
+    
 @app.get("/")
 @app.get("/pong")
 
@@ -29,13 +59,27 @@ def pong():
 def incomingPacket(data:dict):
     print("Packets recived: ")
     print(json.dumps(data,indent=4))
-    packetCaptured.append(data)
-
+    
+    #insert cumulation process here
+    
+    if(len(packetCaptured) < 1):
+        packetCaptured.append(data)
+    
+    packetSnapshots.append(data)
+    cumulatePackets(data)
     return{"status":"recieved"}
 
 @app.get("/getPackets")
 def getPacket():
     if len(packetCaptured) < 1:
         return "No data captured yet"
-    else:
+    else:        
         return packetCaptured
+
+@app.get("/getRecords")
+def throwRecords():
+    if(packetSnapshots):
+        return packetSnapshots
+    else:
+        return "No records yet"
+    
