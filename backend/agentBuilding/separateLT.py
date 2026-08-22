@@ -10,7 +10,7 @@ selectedNic = officePc
 
 def byteCon(bytes):
     if bytes < 1000:
-        return
+        return bytes
     elif bytes < 1000000:
         return f"{bytes/1000} kb"
     elif bytes < 1000000000:
@@ -66,11 +66,14 @@ def observe(pkt):
     ipDst = pkt["IP"].dst
 
     if(macSrc not in deviceTable):
-        deviceTable[macSrc]={
-            "IpAddress" : ipSrc,
-            "Uploads":0,
-            "Downloads":0
-        }
+        
+        if(ipSrc != "0.0.0.0"):
+                
+            deviceTable[macSrc]={
+                "IpAddress" : ipSrc,
+                "Uploads":0,
+                "Downloads":0
+            }
         
         lookUpTable[ipSrc] = macSrc
     

@@ -1,18 +1,49 @@
 import "./index.css";
 import { useEffect, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  Legend,
+  XAxis,
+  YAxis,
+} from "recharts";
+
 function App() {
   interface Packet {
-    Downloads: String;
-    Uploads: String;
-    IpAddress: String;
+    Downloads: string;
+    Uploads: string;
+    IpAddress: string;
   }
 
   interface deviceStats {
     [Mac: string]: Packet;
   }
 
+  type Device = {
+    Ip: string;
+    Upload: number;
+    Download: number;
+  };
+
+  type Record = {
+    [Id: number]: {
+      [Mac: string]: Device;
+    };
+  };
+
+  type chartFuckingData = {
+    IpAddress: string;
+    Uploads: number;
+    Downloads: number;
+    mac: string;
+  };
+
   const [packet, setPackets] = useState<deviceStats>({});
-  const [record, setRecords] = useState<deviceStats>({});
+  const [record, setRecords] = useState<Record>({});
+  const [chartData, setChartData] = useState<chartFuckingData[]>([]);
 
   async function getStat() {
     const request = await fetch("http://127.0.0.1:8000/getPackets");
@@ -21,6 +52,15 @@ function App() {
     const length = Object.keys(response).length;
     console.log(length);
     console.log(response[length - 1]);
+
+    const charts = Object.entries(response[length - 1]).map(([mac, stats]) => ({
+      mac,
+      ...stats,
+    }));
+
+    setChartData(charts);
+    console.log(chartData);
+
     setPackets(response[length - 1]);
   }
 
@@ -31,7 +71,20 @@ function App() {
     setRecords(response);
   }
 
+  function bytecon(bytes: number) {
+    if (bytes < 1000) {
+      return bytes;
+    } else if (bytes < 1000000) {
+      return `${(bytes / 1000).toFixed(2)} kb`;
+    } else if (bytes < 1000000000) {
+      return `${(bytes / 100000).toFixed(2)} mb`;
+    } else if (bytes < 1000000000000) {
+      return `${(bytes / 1000000000).toFixed(2)} gb`;
+    }
+  }
+
   const [listening, setListening] = useState(false);
+  const [openRecord, setOpenRecord] = useState(false);
 
   useEffect(() => {
     if (!listening) {
@@ -47,25 +100,132 @@ function App() {
 
   return (
     <>
-      <div className="bg-[#161618] text-white h-screen font-mono flex justify-center items-center">
-        <div className="flex flex-col items-center gap-10 w-[90%] p-5">
-          {listening && <img src="/src/assets/duck.gif" className="w-xs"></img>}
+      <div className="bg-[#161618] text-white text-sm font-mono min-h-screen md:flex md:justify-center md:items-center">
+        <div className="w-full md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden">
+          <div className="w-full overflow-x-auto">
+            <LineChart
+              style={{ width: "100%", aspectRatio: 1.618 }}
+              responsive
+              data={chartData}
+            >
+              <CartesianGrid />
+              <Line dataKey="Downloads" stroke="#EDE893" />
+              <Line dataKey="Uploads" stroke="#426159" />
+              <XAxis dataKey="mac" />
+              <YAxis />
+              <Legend />
+            </LineChart>
+          </div>
+
+          <div className="w-full overflow-x-auto mt-8">
+            <BarChart
+              style={{
+                width: "100%",
+                maxHeight: "70vh",
+                aspectRatio: 1.618,
+              }}
+              responsive
+              data={chartData}
+              margin={{
+                top: 5,
+                right: 0,
+                left: 0,
+                bottom: 5,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="mac" />
+              <YAxis width="auto" />
+
+              <Legend />
+              <Bar dataKey="Downloads" radius={[10, 10, 0, 0]} fill="#EDE893" />
+              <Bar dataKey="Uploads" radius={[10, 10, 0, 0]} fill="#426159" />
+            </BarChart>
+          </div>
+
+          <div className="w-full overflow-x-auto mt-8">
+            <BarChart
+              data={chartData}
+              layout="vertical"
+              style={{
+                width: "100%",
+                maxWidth: "700px",
+                maxHeight: "70vh",
+                aspectRatio: 1.6,
+              }}
+              responsive
+              barCategoryGap={8}
+              margin={{
+                top: 10,
+                right: 20,
+                left: 10,
+                bottom: 10,
+              }}
+            >
+              <YAxis
+                type="category"
+                dataKey="mac"
+                width="auto"
+                tick={{ fontSize: 11 }}
+              />
+
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+
+              <Legend />
+
+              <Bar
+                name="Downloads"
+                dataKey="Downloads"
+                fill="#EDE893"
+                radius={[0, 5, 5, 0]}
+              />
+
+              <Bar
+                name="Uploads"
+                dataKey="Uploads"
+                fill="#426159"
+                radius={[0, 5, 5, 0]}
+              />
+            </BarChart>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center gap-6 md:gap-10 w-full md:w-[50%] p-4 md:p-5">
+          {listening && (
+            <img src="/src/assets/duck.gif" className="w-40 sm:w-52 md:w-xs" />
+          )}
+
           <div className="text-center w-full p-2 space-y-1">
-            <p className="text-3xl font-bold">"Midsense"</p>
-            <p className="font-sans">
+            <p className="text-2xl sm:text-2xl font-bold">"Midsense"</p>
+
+            <p className="font-sans text-xs sm:text-sm">
               Makeshift monitoring through packet capture
             </p>
           </div>
 
-          <div className="flex space-x-4 px-2">
-            <button
-              onClick={() => getRecords()}
-              className="border-2 rounded-lg p-2 hover:scale-105 bg-white text-black"
-            >
-              View Records
-            </button>
+          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 px-2 w-full">
+            {openRecord === true ? (
+              <button
+                onClick={() => {
+                  setOpenRecord(false);
+                }}
+                className="border-2 rounded-lg p-2 hover:scale-105 bg-white text-black"
+              >
+                Close Records
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  (setOpenRecord(true), getRecords());
+                }}
+                className="border-2 rounded-lg p-2 hover:scale-105 bg-white text-black"
+              >
+                View Records
+              </button>
+            )}
+
             {listening == false ? (
-              <div className="flex items-center justify-end gap-5">
+              <div className="flex items-center justify-center gap-3">
                 <button
                   onClick={() => setListening(true)}
                   className="border-2 rounded-lg p-2 hover:scale-105 bg-white text-black"
@@ -73,10 +233,10 @@ function App() {
                   Start Listening
                 </button>
 
-                <div className="w-5 h-5 bg-gray-600 rounded-full"></div>
+                <div className="w-5 h-5 bg-gray-600 rounded-full shrink-0"></div>
               </div>
             ) : (
-              <div className="flex items-center justify-end gap-5 px-2">
+              <div className="flex items-center justify-center gap-3">
                 <button
                   onClick={() => setListening(false)}
                   className="border-2 rounded-lg p-2 hover:scale-105 bg-white text-black"
@@ -84,30 +244,45 @@ function App() {
                   Stop Listening
                 </button>
 
-                <div className="w-5 h-5 bg-green-700 rounded-full animate-pulse"></div>
+                <div className="w-5 h-5 bg-green-700 rounded-full animate-pulse shrink-0"></div>
               </div>
             )}
           </div>
+
           {packet && listening == true && (
-            <div>
-              <table className="my-4">
+            <div className="w-full overflow-x-auto">
+              <table className="my-4 w-full min-w-[500px]">
                 <thead className="border-2">
-                  <th>MAC Address</th>
-                  <th>Ip Address</th>
-                  <th>Uploads</th>
-                  <th>Downloads</th>
+                  <tr>
+                    <th>MAC Address</th>
+                    <th>Ip Address</th>
+                    <th>Uploads</th>
+                    <th>Downloads</th>
+                  </tr>
                 </thead>
+
                 <tbody>
                   {Object.entries(packet).map(([key, value]) => (
                     <tr key={key}>
-                      <td className="p-2 border-2">{key}</td>
+                      <td className="p-2 border-2 break-all">{key}</td>
 
-                      {Object.entries(value).map(([atkey, atval]) => (
-                        <td className="p-2 border-2" key={atkey.toString()}>
-                          {atval}
-                        </td>
-                      ))}
-                      
+                      {Object.entries(value).map(([atkey, atval]) =>
+                        typeof atval == "number" ? (
+                          <td
+                            className="p-2 border-2 whitespace-nowrap"
+                            key={atkey.toString()}
+                          >
+                            {bytecon(atval)}
+                          </td>
+                        ) : (
+                          <td
+                            className="p-2 border-2 whitespace-nowrap"
+                            key={atkey.toString()}
+                          >
+                            {atval}
+                          </td>
+                        ),
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -116,15 +291,80 @@ function App() {
           )}
         </div>
       </div>
+      {record && openRecord == true && (
+        <div className="bg-[#161618] p-2 font-mono">
+          <div className="bg-white p-4 sm:p-5 rounded-md m-2 sm:m-5">
+            <p className="text-sm sm:text-base">Historical Records</p>
+          </div>
 
-      <div className="bg-[#161618] p-2 font-mono bg-">
-        <div className="bg-white p-5 rounded-md m-5">
-          <p>Historical Records</p>
+          <div className="p-2 sm:p-5 bg-white rounded-lg m-2 sm:m-5 flex justify-center overflow-x-auto">
+            <table className="w-full min-w-[500px]">
+              <thead className="border-2">
+                <tr>
+                  <th>MAC Address</th>
+                  <th>Ip Address</th>
+                  <th>Uploads</th>
+                  <th>Downloads</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {Object.entries(record).map(([recordKey, recordVal]) =>
+                  Object.entries(recordVal).map(([rkeys, rvals]) => (
+                    <tr key={`${recordKey}-${rkeys}`}>
+                      <td className="p-3 sm:p-5 border-2 break-all">{rkeys}</td>
+
+                      {Object.entries(rvals).map(([rvalKey, rvalVal]) =>
+                        typeof rvalVal == "number" ? (
+                          <td
+                            className="p-3 sm:p-5 border-2 whitespace-nowrap"
+                            key={rvalKey}
+                          >
+                            {bytecon(rvalVal)}
+                          </td>
+                        ) : (
+                          <td
+                            className="p-3 sm:p-5 border-2 whitespace-nowrap"
+                            key={rvalKey}
+                          >
+                            {rvalVal.toString()}
+                          </td>
+                        ),
+                      )}
+                    </tr>
+                  )),
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-        {record && <div>{}</div>}
-      </div>
+      )}
     </>
   );
 }
 
 export default App;
+
+{
+  /**    <div className="bg-white p-5 m-5 rounded-lg">
+          {Object.entries(record).map(([key, value]) => (
+            <div key={key.toString()}>
+              {Object.entries(value).map(([valKey, valVal]) => (
+                <div key={valKey.toString()}>
+                  {Object.entries(valVal).map(([netKey, netVal]) => (
+                    <div>
+                      <div className="flex">
+                        <p>{valKey}</p>
+                        <p>{netKey}</p>
+                        <p>{netVal}</p>
+                      </div>
+
+                      <div>------</div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div> */
+}
