@@ -100,99 +100,12 @@ function App() {
 
   return (
     <>
-      <div className="bg-[#161618] text-white text-sm font-mono min-h-screen md:flex md:justify-center md:items-center">
-        <div className="w-full md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden">
-          <div className="w-full overflow-x-auto">
-            <LineChart
-              style={{ width: "100%", aspectRatio: 1.618 }}
-              responsive
-              data={chartData}
-            >
-              <CartesianGrid />
-              <Line dataKey="Downloads" stroke="#EDE893" />
-              <Line dataKey="Uploads" stroke="#426159" />
-              <XAxis dataKey="mac" />
-              <YAxis />
-              <Legend />
-            </LineChart>
-          </div>
-
-          <div className="w-full overflow-x-auto mt-8">
-            <BarChart
-              style={{
-                width: "100%",
-                maxHeight: "70vh",
-                aspectRatio: 1.618,
-              }}
-              responsive
-              data={chartData}
-              margin={{
-                top: 5,
-                right: 0,
-                left: 0,
-                bottom: 5,
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="mac" />
-              <YAxis width="auto" />
-
-              <Legend />
-              <Bar dataKey="Downloads" radius={[10, 10, 0, 0]} fill="#EDE893" />
-              <Bar dataKey="Uploads" radius={[10, 10, 0, 0]} fill="#426159" />
-            </BarChart>
-          </div>
-
-          <div className="w-full overflow-x-auto mt-8">
-            <BarChart
-              data={chartData}
-              layout="vertical"
-              style={{
-                width: "100%",
-                maxWidth: "700px",
-                maxHeight: "70vh",
-                aspectRatio: 1.6,
-              }}
-              responsive
-              barCategoryGap={8}
-              margin={{
-                top: 10,
-                right: 20,
-                left: 10,
-                bottom: 10,
-              }}
-            >
-              <YAxis
-                type="category"
-                dataKey="mac"
-                width="auto"
-                tick={{ fontSize: 11 }}
-              />
-
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-
-              <Legend />
-
-              <Bar
-                name="Downloads"
-                dataKey="Downloads"
-                fill="#EDE893"
-                radius={[0, 5, 5, 0]}
-              />
-
-              <Bar
-                name="Uploads"
-                dataKey="Uploads"
-                fill="#426159"
-                radius={[0, 5, 5, 0]}
-              />
-            </BarChart>
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center gap-6 md:gap-10 w-full md:w-[50%] p-4 md:p-5">
-          {listening && (
+      <div className="bg-[#161618] text-white text-sm font-mono min-h-screen md:flex md:justify-center md:items-start">
+        <div className="flex flex-col items-center gap-6 md:gap-10 w-full md:w-[50%] p-4 md:p-5 pt-200 mt-12">
+          {listening == true ? (
             <img src="/src/assets/duck.gif" className="w-40 sm:w-52 md:w-xs" />
+          ) : (
+            <img src="/src/assets/duck.jpg" className="w-40 sm:w-52 md:w-xs" />
           )}
 
           <div className="text-center w-full p-2 space-y-1">
@@ -203,7 +116,7 @@ function App() {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 px-2 w-full">
+          <div className="flex  sm:flex-row flex-wrap justify-center gap-3 px-2 w-full">
             {openRecord === true ? (
               <button
                 onClick={() => {
@@ -289,6 +202,94 @@ function App() {
               </table>
             </div>
           )}
+        </div>
+
+        <div className="w-full md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden">
+          <div className="w-full overflow-x-auto mt-8">
+            <BarChart
+              style={{
+                width: "100%",
+                maxHeight: "70vh",
+                aspectRatio: 1.618,
+              }}
+              responsive
+              data={chartData}
+              margin={{
+                top: 5,
+                right: 0,
+                left: 0,
+                bottom: 5,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="mac" />
+              <YAxis width="auto" />
+
+              <Legend />
+              <Bar dataKey="Downloads" radius={[10, 10, 0, 0]} fill="#EDE893" />
+              <Bar dataKey="Uploads" radius={[10, 10, 0, 0]} fill="#426159" />
+            </BarChart>
+          </div>
+
+          <div className="w-full overflow-x-auto">
+            <LineChart
+              style={{ width: "100%", aspectRatio: 1.618 }}
+              responsive
+              data={chartData}
+            >
+              <CartesianGrid />
+              <Line dataKey="Downloads" stroke="#EDE893" />
+              <Line dataKey="Uploads" stroke="#426159" />
+              <XAxis dataKey="mac" />
+              <YAxis />
+              <Legend />
+            </LineChart>
+          </div>
+
+          <div className="w-full overflow-x-auto mt-10">
+            <BarChart
+              data={chartData}
+              layout="vertical"
+              style={{
+                width: "100%",
+                maxHeight: "70vh",
+                aspectRatio: 1.618,
+              }}
+              responsive
+              barCategoryGap={8}
+              margin={{
+                top: 10,
+                right: 0,
+                left: 0,
+                bottom: 10,
+              }}
+            >
+              <YAxis
+                type="category"
+                dataKey="mac"
+                width="auto"
+                tick={{ fontSize: 11 }}
+              />
+
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+
+              <Legend />
+
+              <Bar
+                name="Downloads"
+                dataKey="Downloads"
+                fill="#EDE893"
+                radius={[0, 5, 5, 0]}
+              />
+
+              <Bar
+                name="Uploads"
+                dataKey="Uploads"
+                fill="#426159"
+                radius={[0, 5, 5, 0]}
+              />
+            </BarChart>
+          </div>
         </div>
       </div>
       {record && openRecord == true && (

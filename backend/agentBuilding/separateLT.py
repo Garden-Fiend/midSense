@@ -2,11 +2,11 @@
 from scapy.all import *
 import requests
 
-homePc = "Microsoft Wi-Fi Direct Virtual Adapter #4"
+homePc = "Local Area Connection* 12"
 officePc = "Local Area Connection* 2"
 temporary = "Ethernet"
 
-selectedNic = officePc
+selectedNic = homePc
 
 def byteCon(bytes):
     if bytes < 1000:
