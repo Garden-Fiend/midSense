@@ -88,9 +88,9 @@ function App() {
     console.log(response);
     setPackets(response);
 
-    if (packet) {
+    if (Object.entries(response).length > 0) {
       const chartDataHolder = Object.fromEntries(
-        Object.entries(packet).map(([Headers, Data]) => [
+        Object.entries(response).map(([Headers, Data]) => [
           [Headers],
           Object.entries(Data.devices).map(([datakey, dataVal]) => ({
             mac: datakey,
@@ -140,7 +140,7 @@ function App() {
   return (
     <>
       <div className="bg-[#161618] text-white text-sm font-mono min-h-screen md:flex md:justify-center md:items-start">
-        <div className="flex flex-col items-center gap-6 md:gap-10 w-full md:w-[50%] p-4 md:p-5 pt-200 mt-12">
+        <div className="flex flex-col items-center gap-6 md:gap-10 w-full md:w-[50%] p-4 md:p-5 md:pt-200 md:mt-12 pt-5">
           {listening == true ? (
             <img src="/src/assets/duck.gif" className="w-40 sm:w-52 md:w-xs" />
           ) : (
@@ -201,12 +201,12 @@ function App() {
             )}
           </div>
 
-          {packet && listening == true && (
+          {Object.keys(packet).length > 0 && listening == true && (
             <div className="w-full overflow-x-auto">
               {Object.entries(packet).map(([header, data]) => (
                 <div className="w-full" key={header}>
                   <p>{header}</p>
-                  <table className="my-4 w-full min-w-125">
+                  <table className="my-4 w-full min-w-125 md:scale-100">
                     <thead className="border-2">
                       <tr>
                         <th>MAC Address</th>
@@ -248,9 +248,9 @@ function App() {
           )}
         </div>
 
-        {chartData &&
+        {Object.keys(chartData).length > 0 &&
           Object.entries(chartData).map(([router, data]) => (
-            <div className="w-full md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden">
+            <div className="md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden" key={router}>
               <p>{router}</p>
               <div className="w-full overflow-x-auto mt-8">
                 <BarChart
