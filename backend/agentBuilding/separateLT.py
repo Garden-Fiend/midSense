@@ -6,7 +6,12 @@ homePc = "Local Area Connection* 12"
 officePc = "Local Area Connection* 2"
 temporary = "Ethernet"
 
-selectedNic = homePc
+selectedNic = officePc
+
+
+        
+SERVER_URL = "http://127.0.0.1:8000/incomingPackets"
+ROUTER_HEADER = selectedNic
 
 def byteCon(bytes):
     if bytes < 1000:
@@ -96,8 +101,8 @@ while True:
         print(f"IP Address: {deviceTable[device]['IpAddress']}")
         print(f"Uploads: {byteCon(deviceTable[device]['Uploads'])}")
         print(f"Downloads: {byteCon(deviceTable[device]['Downloads'])}")
-
-    r = requests.post("http://127.0.0.1:8000/incomingPackets",json=deviceTable)
+        
+        r = requests.post(SERVER_URL,headers={"router_id":ROUTER_HEADER}, json=deviceTable)
 
 
 

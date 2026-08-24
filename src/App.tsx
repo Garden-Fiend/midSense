@@ -12,6 +12,27 @@ import {
 } from "recharts";
 
 function App() {
+  const noPackets = [
+    {
+      IpAddress: "None",
+      Uploads: 50,
+      Downloads: 20,
+      mac: "Device A",
+    },
+    {
+      IpAddress: "None",
+      Uploads: 34,
+      Downloads: 100,
+      mac: "Device B",
+    },
+    {
+      IpAddress: "None",
+      Uploads: 84,
+      Downloads: 90,
+      mac: "Device C",
+    },
+  ];
+
   interface Packet {
     Downloads: string;
     Uploads: string;
@@ -20,6 +41,15 @@ function App() {
 
   interface deviceStats {
     [Mac: string]: Packet;
+  }
+
+  interface routerStats {
+    routerId: string;
+    devices: deviceStats;
+  }
+
+  interface routers {
+    [router: string]: routerStats;
   }
 
   type Device = {
@@ -41,9 +71,13 @@ function App() {
     mac: string;
   };
 
-  const [packet, setPackets] = useState<deviceStats>({});
+  type Charting = {
+    [Router: string]: chartFuckingData[];
+  };
+
+  const [packet, setPackets] = useState<routers>({});
   const [record, setRecords] = useState<Record>({});
-  const [chartData, setChartData] = useState<chartFuckingData[]>([]);
+  const [chartData, setChartData] = useState<Charting>({});
 
   async function getStat() {
     const request = await fetch("http://127.0.0.1:8000/getPackets");
@@ -51,17 +85,22 @@ function App() {
 
     const length = Object.keys(response).length;
     console.log(length);
-    console.log(response[length - 1]);
+    console.log(response);
+    setPackets(response);
 
-    const charts = Object.entries(response[length - 1]).map(([mac, stats]) => ({
-      mac,
-      ...stats,
-    }));
-
-    setChartData(charts);
-    console.log(chartData);
-
-    setPackets(response[length - 1]);
+    if (packet) {
+      const chartDataHolder = Object.fromEntries(
+        Object.entries(packet).map(([Headers, Data]) => [
+          [Headers],
+          Object.entries(Data.devices).map(([datakey, dataVal]) => ({
+            mac: datakey,
+            ...dataVal,
+          })),
+        ]),
+      );
+      console.log(chartDataHolder);
+      setChartData(chartDataHolder);
+    }
   }
 
   async function getRecords() {
@@ -164,133 +203,156 @@ function App() {
 
           {packet && listening == true && (
             <div className="w-full overflow-x-auto">
-              <table className="my-4 w-full min-w-[500px]">
-                <thead className="border-2">
-                  <tr>
-                    <th>MAC Address</th>
-                    <th>Ip Address</th>
-                    <th>Uploads</th>
-                    <th>Downloads</th>
-                  </tr>
-                </thead>
+              {Object.entries(packet).map(([header, data]) => (
+                <div className="w-full" key={header}>
+                  <p>{header}</p>
+                  <table className="my-4 w-full min-w-125">
+                    <thead className="border-2">
+                      <tr>
+                        <th>MAC Address</th>
+                        <th>Ip Address</th>
+                        <th>Uploads</th>
+                        <th>Downloads</th>
+                      </tr>
+                    </thead>
 
-                <tbody>
-                  {Object.entries(packet).map(([key, value]) => (
-                    <tr key={key}>
-                      <td className="p-2 border-2 break-all">{key}</td>
+                    <tbody>
+                      {Object.entries(data.devices).map(([key, value]) => (
+                        <tr key={key}>
+                          <td className="p-2 border-2 break-all">{key}</td>
 
-                      {Object.entries(value).map(([atkey, atval]) =>
-                        typeof atval == "number" ? (
-                          <td
-                            className="p-2 border-2 whitespace-nowrap"
-                            key={atkey.toString()}
-                          >
-                            {bytecon(atval)}
-                          </td>
-                        ) : (
-                          <td
-                            className="p-2 border-2 whitespace-nowrap"
-                            key={atkey.toString()}
-                          >
-                            {atval}
-                          </td>
-                        ),
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          {Object.entries(value).map(([atkey, atval]) =>
+                            typeof atval == "number" ? (
+                              <td
+                                className="p-2 border-2 whitespace-nowrap"
+                                key={atkey.toString()}
+                              >
+                                {bytecon(atval)}
+                              </td>
+                            ) : (
+                              <td
+                                className="p-2 border-2 whitespace-nowrap"
+                                key={atkey.toString()}
+                              >
+                                {atval}
+                              </td>
+                            ),
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        <div className="w-full md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden">
-          <div className="w-full overflow-x-auto mt-8">
-            <BarChart
-              style={{
-                width: "100%",
-                maxHeight: "70vh",
-                aspectRatio: 1.618,
-              }}
-              responsive
-              data={chartData}
-              margin={{
-                top: 5,
-                right: 0,
-                left: 0,
-                bottom: 5,
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="mac" />
-              <YAxis width="auto" />
+        {chartData &&
+          Object.entries(chartData).map(([router, data]) => (
+            <div className="w-full md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden">
+              <p>{router}</p>
+              <div className="w-full overflow-x-auto mt-8">
+                <BarChart
+                  style={{
+                    width: "100%",
+                    maxHeight: "70vh",
+                    aspectRatio: 1.618,
+                  }}
+                  responsive
+                  data={data.length > 1 ? data : noPackets}
+                  margin={{
+                    top: 5,
+                    right: 0,
+                    left: 0,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="mac" />
+                  <YAxis width="auto" />
 
-              <Legend />
-              <Bar dataKey="Downloads" radius={[10, 10, 0, 0]} fill="#EDE893" />
-              <Bar dataKey="Uploads" radius={[10, 10, 0, 0]} fill="#426159" />
-            </BarChart>
-          </div>
+                  <Legend />
+                  <Bar
+                    dataKey="Downloads"
+                    radius={[10, 10, 0, 0]}
+                    fill="#ff6600"
+                  />
+                  <Bar
+                    dataKey="Uploads"
+                    radius={[10, 10, 0, 0]}
+                    fill="#ffffff"
+                  />
+                </BarChart>
+              </div>
 
-          <div className="w-full overflow-x-auto">
-            <LineChart
-              style={{ width: "100%", aspectRatio: 1.618 }}
-              responsive
-              data={chartData}
-            >
-              <CartesianGrid />
-              <Line dataKey="Downloads" stroke="#EDE893" />
-              <Line dataKey="Uploads" stroke="#426159" />
-              <XAxis dataKey="mac" />
-              <YAxis />
-              <Legend />
-            </LineChart>
-          </div>
+              <div className="w-full overflow-x-auto mt-8">
+                <LineChart
+                  style={{ width: "100%", aspectRatio: 1.618 }}
+                  responsive
+                  data={data.length > 1 ? data : noPackets}
+                >
+                  <CartesianGrid />
+                  <Line
+                    dataKey="Downloads"
+                    stroke="#ff6600"
+                    strokeWidth={"4"}
+                  />
+                  <Line dataKey="Uploads" stroke="#ffffff" strokeWidth={"4"} />
+                  <XAxis dataKey="mac" />
+                  <YAxis />
+                  <Legend />
+                </LineChart>
+              </div>
 
-          <div className="w-full overflow-x-auto mt-10">
-            <BarChart
-              data={chartData}
-              layout="vertical"
-              style={{
-                width: "100%",
-                maxHeight: "70vh",
-                aspectRatio: 1.618,
-              }}
-              responsive
-              barCategoryGap={8}
-              margin={{
-                top: 10,
-                right: 0,
-                left: 0,
-                bottom: 10,
-              }}
-            >
-              <YAxis
-                type="category"
-                dataKey="mac"
-                width="auto"
-                tick={{ fontSize: 11 }}
-              />
+              <div className="w-full overflow-x-auto mt-10">
+                <BarChart
+                  data={data.length > 1 ? data : noPackets}
+                  layout="vertical"
+                  style={{
+                    width: "100%",
+                    maxHeight: "70vh",
+                    aspectRatio: 1.618,
+                  }}
+                  responsive
+                  barCategoryGap={8}
+                  margin={{
+                    top: 10,
+                    right: 0,
+                    left: 0,
+                    bottom: 10,
+                  }}
+                >
+                  <YAxis
+                    type="category"
+                    dataKey="mac"
+                    width="auto"
+                    tick={{ fontSize: 11 }}
+                  />
 
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" width="auto" tick={{ fontSize: 11 }} />
 
-              <Legend />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
 
-              <Bar
-                name="Downloads"
-                dataKey="Downloads"
-                fill="#EDE893"
-                radius={[0, 5, 5, 0]}
-              />
+                  <Legend />
 
-              <Bar
-                name="Uploads"
-                dataKey="Uploads"
-                fill="#426159"
-                radius={[0, 5, 5, 0]}
-              />
-            </BarChart>
-          </div>
-        </div>
+                  <Bar
+                    name="Downloads"
+                    dataKey="Downloads"
+                    fill="#ff6600"
+                    radius={[0, 5, 5, 0]}
+                  />
+
+                  <Bar
+                    name="Uploads"
+                    dataKey="Uploads"
+                    fill="#ffffff"
+                    radius={[0, 5, 5, 0]}
+                  />
+                </BarChart>
+              </div>
+            </div>
+          ))}
       </div>
       {record && openRecord == true && (
         <div className="bg-[#161618] p-2 font-mono">
@@ -362,7 +424,7 @@ export default App;
 
                       <div>------</div>
                     </div>
-                  ))}
+                  ))} 
                 </div>
               ))}
             </div>
