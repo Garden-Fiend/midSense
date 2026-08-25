@@ -8,6 +8,7 @@ import {
   LineChart,
   Legend,
   XAxis,
+  Tooltip,
   YAxis,
 } from "recharts";
 
@@ -248,9 +249,12 @@ function App() {
           )}
         </div>
 
-        {Object.keys(chartData).length > 0 ?
+        {Object.keys(chartData).length > 0 ? (
           Object.entries(chartData).map(([router, data]) => (
-            <div className="md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden" key={router}>
+            <div
+              className="md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden"
+              key={router}
+            >
               <p>{router}</p>
               <div className="w-full overflow-x-auto mt-8">
                 <BarChart
@@ -269,6 +273,11 @@ function App() {
                   }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#000",
+                    }}
+                  />
                   <XAxis dataKey="mac" />
                   <YAxis width="auto" />
 
@@ -352,109 +361,119 @@ function App() {
                 </BarChart>
               </div>
             </div>
-          )) :  <div className="md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden">
-            
-              <div className="w-full overflow-x-auto mt-8">
-                <BarChart
-                  style={{
-                    width: "100%",
-                    maxHeight: "70vh",
-                    aspectRatio: 1.618,
+          ))
+        ) : (
+          <div className="md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden">
+            <div className="w-full overflow-x-auto mt-8">
+              <BarChart
+                style={{
+                  width: "100%",
+                  maxHeight: "70vh",
+                  aspectRatio: 1.618,
+                }}
+                responsive
+                data={noPackets}
+                margin={{
+                  top: 5,
+                  right: 0,
+                  left: 0,
+                  bottom: 5,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="mac" />
+                <YAxis width="auto" />
+
+                <Legend />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#000",
                   }}
-                  responsive
-                  data={noPackets}
-                  margin={{
-                    top: 5,
-                    right: 0,
-                    left: 0,
-                    bottom: 5,
+                />
+                <Bar
+                  dataKey="Downloads"
+                  radius={[10, 10, 0, 0]}
+                  fill="#ff6600"
+                />
+                <Bar dataKey="Uploads" radius={[10, 10, 0, 0]} fill="#fcf7e8" />
+              </BarChart>
+            </div>
+
+            <div className="w-full overflow-x-auto mt-8">
+              <LineChart
+                style={{ width: "100%", aspectRatio: 1.618 }}
+                responsive
+                data={noPackets}
+              >
+                <CartesianGrid />
+                <Line dataKey="Downloads" stroke="#ff6600" strokeWidth={"4"} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#000",
                   }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="mac" />
-                  <YAxis width="auto" />
+                />
+                <Line dataKey="Uploads" stroke="#ffffff" strokeWidth={"4"} />
+                <XAxis dataKey="mac" />
+                <YAxis />
+                <Legend />
+              </LineChart>
+            </div>
 
-                  <Legend />
-                  <Bar
-                    dataKey="Downloads"
-                    radius={[10, 10, 0, 0]}
-                    fill="#ff6600"
-                  />
-                  <Bar
-                    dataKey="Uploads"
-                    radius={[10, 10, 0, 0]}
-                    fill="#ffffff"
-                  />
-                </BarChart>
-              </div>
-
-              <div className="w-full overflow-x-auto mt-8">
-                <LineChart
-                  style={{ width: "100%", aspectRatio: 1.618 }}
-                  responsive
-                  data={noPackets}
-                >
-                  <CartesianGrid />
-                  <Line
-                    dataKey="Downloads"
-                    stroke="#ff6600"
-                    strokeWidth={"4"}
-                  />
-                  <Line dataKey="Uploads" stroke="#ffffff" strokeWidth={"4"} />
-                  <XAxis dataKey="mac" />
-                  <YAxis />
-                  <Legend />
-                </LineChart>
-              </div>
-
-              <div className="w-full overflow-x-auto mt-10">
-                <BarChart
-                  data={noPackets}
-                  layout="vertical"
-                  style={{
-                    width: "100%",
-                    maxHeight: "70vh",
-                    aspectRatio: 1.618,
+            <div className="w-full overflow-x-auto mt-10">
+              <BarChart
+                data={noPackets}
+                layout="vertical"
+                style={{
+                  width: "100%",
+                  maxHeight: "70vh",
+                  aspectRatio: 1.618,
+                }}
+                responsive
+                barCategoryGap={8}
+                margin={{
+                  top: 10,
+                  right: 0,
+                  left: 0,
+                  bottom: 10,
+                }}
+              >
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#000",
                   }}
-                  responsive
-                  barCategoryGap={8}
-                  margin={{
-                    top: 10,
-                    right: 0,
-                    left: 0,
-                    bottom: 10,
-                  }}
-                >
-                  <YAxis
-                    type="category"
-                    dataKey="mac"
-                    width="auto"
-                    tick={{ fontSize: 11 }}
-                  />
+                />
 
-                  <XAxis type="number" width="auto" tick={{ fontSize: 11 }} />
+                <YAxis
+                  type="category"
+                  dataKey="mac"
+                  width="auto"
+                  tick={{ fontSize: 11 }}
+                />
 
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" width="auto" tick={{ fontSize: 11 }} />
 
-                  <Legend />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
 
-                  <Bar
-                    name="Downloads"
-                    dataKey="Downloads"
-                    fill="#ff6600"
-                    radius={[0, 5, 5, 0]}
-                  />
+                <Legend />
 
-                  <Bar
-                    name="Uploads"
-                    dataKey="Uploads"
-                    fill="#ffffff"
-                    radius={[0, 5, 5, 0]}
-                  />
-                </BarChart>
-              </div>
-            </div> }
-      </div> 
+                <Bar
+                  name="Downloads"
+                  dataKey="Downloads"
+                  fill="#ff6600"
+                  radius={[0, 5, 5, 0]}
+                />
+
+                <Bar
+                  name="Uploads"
+                  dataKey="Uploads"
+                  fill="#ffffff"
+                  radius={[0, 5, 5, 0]}
+                />
+              </BarChart>
+            </div>
+          </div>
+        )}
+      </div>
       {record && openRecord == true && (
         <div className="bg-[#161618] p-2 font-mono">
           <div className="bg-white p-4 sm:p-5 rounded-md m-2 sm:m-5">
