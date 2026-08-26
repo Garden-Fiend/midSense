@@ -20,6 +20,7 @@ dist-ssr
 *.suo
 *.ntvs*
 *.njsproj
+*.env 
 *.sln
 *.sw?
 # Python virtual environments
