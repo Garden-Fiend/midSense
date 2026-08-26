@@ -1,7 +1,10 @@
 
-from fastapi import FastAPI,Request, BackgroundTasks
+from fastapi import FastAPI,Request
 from fastapi.middleware.cors import CORSMiddleware
-from agentBuilding.networkObserver import startObservation
+import os
+import psycopg2
+from dotenv import load_dotenv
+
 import json
 
 packetCaptured = {}
@@ -46,17 +49,6 @@ def cumulatePackets(data,router):
             
         
 
-                
-    
-    
-@app.get("/")
-@app.get("/pong")
-
-def root():
-    return {"message":"Why is this in key value pairs? "}
-
-def pong():
-    return {"response": "pong"}
 
 @app.post("/incomingPackets")
 def incomingPacket(data:dict,request:Request):
@@ -75,12 +67,14 @@ def incomingPacket(data:dict,request:Request):
                       
     return{"status":"recieved"}
 
+
 @app.get("/getPackets")
 def getPacket():
     if len(packetCaptured) < 1:
         return "No data captured yet"
     else:        
         return packetCaptured
+
 
 @app.get("/getRecords")
 def throwRecords():
