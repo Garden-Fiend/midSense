@@ -53,10 +53,12 @@ def cumulatePackets(data,router):
 @app.post("/incomingPackets")
 def incomingPacket(data:dict,request:Request):
     print("Packets recived: ")
-    print(json.dumps(data,indent=4))
-    
     routerId = request.headers.get("router_id")
+    formattedData = json.dumps(data,indent=4)
+    print(routerId)
+    print(formattedData)
     
+        
     #insert cumulation process here
     cumulatePackets(data,routerId)    
             
