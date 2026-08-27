@@ -1,9 +1,6 @@
 
 from fastapi import FastAPI,Request
 from fastapi.middleware.cors import CORSMiddleware
-import os
-import psycopg2
-from dotenv import load_dotenv
 
 import json
 

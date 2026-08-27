@@ -8,14 +8,13 @@ DB_URL = os.getenv("DATABASE_URL")
 connection = psycopg2.connect(DB_URL)
 
 
-
 scribe = connection.cursor()
-
 
 
 header = "routerA"
 
 sampleJSON = {
+
     "4a:e7:da:58:e0:33": {
         "IpAddress": "192.168.137.1",
         "Uploads": 793,
@@ -28,44 +27,36 @@ sampleJSON = {
     }
 }
 
-def throwCapture(capturedRouter,capturedDevices):
-    
-    print("QUERY FOR ROUTER: ")
-    
-    scribe.execute(""" INSERT INTO routers() VALUES(%s) """,(capturedRouter))
-    
-    print("Header: ",capturedRouter)
 
-    print("-----------")
+def throwCapture(capturedRouter, capturedDevices):
+
+    print("QUERY FOR ROUTER: ")
+
+    scribe.execute(" INSERT INTO routers(name) VALUES(%s) RETURNING id", (capturedRouter,))
+
+    router_id = scribe.fetchone()[0]
 
     for device in capturedDevices:
-        
-        
-        
-        print("INSERT QUERY FOR DEVICE: ")
-        
-        scribe.execute("""                        
-                       INSERT INTO devices (router_id,mac,ip) VALUES (%s,%s,%s) 
-                       """, device,capturedRouter[device]["IpAddress"])
-        
-        print("mac: ", device)
-        print("ip: ",capturedDevices[device]["IpAddress"])
-        
-        
-        print("-----------")                
-        
-        print("INSERT QUERY FOR RECORDS: ")                
-        print("mac: ", device)
-        print("ip: ",capturedDevices[device]["IpAddress"])
-        print("uploads: ",capturedDevices [device]["Uploads"])
-        print("downloads: ",capturedDevices [device]["Downloads"])
+
+            print("INSERT QUERY FOR DEVICE: ")
+
+            scribe.execute("INSERT INTO devices (router_id,mac,ip) VALUES (%s,%s,%s) RETURNING id",
+                           (router_id, device, capturedDevices[device]["IpAddress"]))
+
+            device_id = scribe.fetchone()[0]
+
+
+
+            print("INSERT QUERY FOR RECORDS: ")
+
+            scribe.execute("INSERT INTO records (router,device_id,mac,ip,uploads,downloads) VALUES(%s,%s,%s,%s,%s,%s)", (router_id, device_id, device, capturedDevices[device]["IpAddress"], capturedDevices[device]["Uploads"], capturedDevices[device]["Downloads"])
+                               )
     
-        print("-----------")
-
-throwCapture(header,sampleJSON)
-
-
-
+    connection.commit()
+    scribe.close() 
+    connection.close()        
+            
 
 
+throwCapture(header, sampleJSON)
 
