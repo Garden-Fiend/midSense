@@ -6,7 +6,7 @@ homePc = "Local Area Connection* 12"
 officePc = "Local Area Connection* 2"
 temporary = "Ethernet"
 
-selectedNic = temporary
+selectedNic = officePc
 
 
         
@@ -41,7 +41,10 @@ def huntGateway(targetIface):
 
 gateway = huntGateway(selectedNic)
 
+ROUTER_MAC = gateway.mac
 print("Gateway details obtained")
+
+
 
 lookUpTable[gateway.ip] = gateway.mac
 deviceTable[gateway.mac] = {
@@ -102,7 +105,7 @@ while True:
         print(f"Uploads: {byteCon(deviceTable[device]['Uploads'])}")
         print(f"Downloads: {byteCon(deviceTable[device]['Downloads'])}")
         
-        r = requests.post(SERVER_URL,headers={"router_id":ROUTER_HEADER}, json=deviceTable)
+        r = requests.post(SERVER_URL,headers={"hostname":ROUTER_HEADER,"mac": ROUTER_MAC}, json=deviceTable)
 
 
 

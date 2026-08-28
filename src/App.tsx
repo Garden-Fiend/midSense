@@ -131,7 +131,7 @@ function App() {
       return;
     }
 
-    const interval = setInterval(getStat, 5000);
+    const interval = setInterval(getStat, 50000);
 
     return () => {
       clearInterval(interval);
