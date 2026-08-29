@@ -79,7 +79,7 @@ function App() {
   type device_stats = {
     timestamp: string;
     id: string;
-    ip:string
+    ip: string;
     downloads: number;
     uploads: number;
     mac: string;
@@ -180,6 +180,7 @@ function App() {
 
   const [listening, setListening] = useState(false);
   const [openRecord, setOpenRecord] = useState(false);
+  const [filter, setFilter] = useState("InsertGateway");
 
   useEffect(() => {
     if (!listening) {
@@ -195,68 +196,420 @@ function App() {
 
   return (
     <>
-      <div className="bg-[#161618] text-white text-sm font-mono min-h-screen md:flex md:justify-center md:items-start">
-        <div className="flex flex-col items-center gap-6 md:gap-10 w-full md:w-[50%] p-4 md:p-5 md:pt-20 md:mt-12 pt-5">
-          {listening == true ? (
-            <img src="/src/assets/duck.gif" className="w-40 sm:w-52 md:w-xs" />
+      <div className="bg-[#161618] text-[#FFF6E9] text-sm font-mono min-h-screen  md:justify-center md:items-start">
+        <div className="flex items-start justify-center gap-20 p-10">
+          <div className="w-1/4">
+            <div className="flex flex-col items-center gap-6 md:gap-10 w-full">
+              {listening == true ? (
+                <img
+                  src="/src/assets/duck.gif"
+                  className="w-40 sm:w-52 md:w-xs"
+                />
+              ) : (
+                <img
+                  src="/src/assets/duck.jpg"
+                  className="w-40 sm:w-52 md:w-xs"
+                />
+              )}
+
+              <div className="text-center w-full p-2 space-y-1">
+                <p className="text-2xl sm:text-2xl font-bold">"Midsense"</p>
+
+                <p className="font-sans text-xs sm:text-sm">
+                  Makeshift monitoring through packet capture
+                </p>
+              </div>
+
+              <div className="flex sm:flex-row flex-wrap justify-center gap-2 px-2 w-full">
+                {openRecord === true ? (
+                  <button
+                    onClick={() => {
+                      setOpenRecord(false);
+                    }}
+                    className="border-2 rounded-lg p-2 hover:scale-105 bg-[#FFF6E9] text-[#0A171D]"
+                  >
+                    Close Records
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      (setOpenRecord(true), getRecords());
+                    }}
+                    className="border-2 rounded-lg p-2 hover:scale-105 bg-[#FFF6E9] text-[#0A171D]"
+                  >
+                    View Records
+                  </button>
+                )}
+
+                {listening == false ? (
+                  <div className="flex items-center justify-center gap-3">
+                    <button
+                      onClick={() => setListening(true)}
+                      className="border-2 rounded-lg p-2 hover:scale-105 bg-[#FFF6E9] text-[#0A171D]"
+                    >
+                      Start Listening
+                    </button>
+
+                    <div className="w-5 h-5 bg-gray-600 rounded-full shrink-0"></div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-3">
+                    <button
+                      onClick={() => setListening(false)}
+                      className="border-2 rounded-lg p-2 hover:scale-105 bg-[#FFF6E9] text-[#0A171D]"
+                    >
+                      Stop Listening
+                    </button>
+
+                    <div className="w-5 h-5 bg-green-700 rounded-full animate-pulse shrink-0"></div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="w-3/4">
+            <div className="flex gap-5 w-full">
+              <input
+                type="text"
+                placeholder="Find a Gateway"
+                value={filter}
+                className="w-full border-2 p-3 rounded-xl"
+                onChange={(e) => setFilter(e.target.value)}
+              ></input>
+
+              <button className="p-3 bg-[#FFF6E9] text-[#0A171D] rounded-xl">
+                Search
+              </button>
+            </div>
+            {Object.entries(fetchedRecord).length > 0 ? (
+              <div>
+                {Object.entries(fetchedRecord)
+                  .filter(([router]) => router == filter)
+                  .map(([router, devices]) => (
+                    <div className="border-2 mt-2" key={router}>
+                      <p className="place-self-center p-4 bg-[#003f47] w-full text-center">
+                        {router}
+                      </p>
+
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <td className="border-2 p-2">Mac</td>
+                            <td className="border-2 p-2">Ip Address</td>
+                            <td className="border-2 p-2">Uploads</td>
+                            <td className="border-2 p-2">Downloads</td>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {Object.entries(devices).map(
+                            ([devices, deviceStats]) => (
+                              <tr key={devices}>
+                                <td className="border-2 p-2">
+                                  {deviceStats.mac}{" "}
+                                </td>
+                                <td className="border-2 p-2">
+                                  {deviceStats.ip}{" "}
+                                </td>
+                                <td className="border-2 p-2">
+                                  {bytecon(deviceStats.uploads)}{" "}
+                                </td>
+                                <td className="border-2 p-2">
+                                  {bytecon(deviceStats.downloads)}{" "}
+                                </td>
+                              </tr>
+                            ),
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="p-40 mt-10 flex justify-center rounded-xl bg-[#003f47]">
+                <p>No Gateway Selected Yet</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-[#FFF6E9] h-fit">
+          {Object.keys(chartData).length > 0 ? (
+            Object.entries(chartData).map(([router, data]) => (
+              <div
+                className="md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden"
+                key={router}
+              >
+                <p>{router}</p>
+                <div className="w-full overflow-x-auto mt-8">
+                  <BarChart
+                    style={{
+                      width: "100%",
+                      maxHeight: "70vh",
+                      aspectRatio: 1.618,
+                    }}
+                    responsive
+                    data={data.length > 1 ? data : noPackets}
+                    margin={{
+                      top: 5,
+                      right: 0,
+                      left: 0,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#000",
+                      }}
+                    />
+                    <XAxis dataKey="mac" />
+                    <YAxis width="auto" />
+
+                    <Legend />
+                    <Bar
+                      dataKey="Downloads"
+                      radius={[10, 10, 0, 0]}
+                      fill="#FFBD76"
+                    />
+                    <Bar
+                      dataKey="Uploads"
+                      radius={[10, 10, 0, 0]}
+                      fill="#003F47"
+                    />
+                  </BarChart>
+                </div>
+
+                <div className="w-full overflow-x-auto mt-8">
+                  <LineChart
+                    style={{ width: "100%", aspectRatio: 1.618 }}
+                    responsive
+                    data={data.length > 1 ? data : noPackets}
+                  >
+                    <CartesianGrid />
+                    <Line
+                      dataKey="Downloads"
+                      stroke="#FFBD76"
+                      strokeWidth={"4"}
+                    />
+                    <Line
+                      dataKey="Uploads"
+                      stroke="#003F47"
+                      strokeWidth={"4"}
+                    />
+                    <XAxis dataKey="mac" />
+                    <YAxis />
+                    <Legend />
+                  </LineChart>
+                </div>
+
+                <div className="w-full overflow-x-auto mt-10">
+                  <BarChart
+                    data={data.length > 1 ? data : noPackets}
+                    layout="vertical"
+                    style={{
+                      width: "100%",
+                      maxHeight: "70vh",
+                      aspectRatio: 1.618,
+                    }}
+                    responsive
+                    barCategoryGap={8}
+                    margin={{
+                      top: 10,
+                      right: 0,
+                      left: 0,
+                      bottom: 10,
+                    }}
+                  >
+                    <YAxis
+                      type="category"
+                      dataKey="mac"
+                      width="auto"
+                      tick={{ fontSize: 11 }}
+                    />
+
+                    <XAxis type="number" width="auto" tick={{ fontSize: 11 }} />
+
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+
+                    <Legend />
+
+                    <Bar
+                      name="Downloads"
+                      dataKey="Downloads"
+                      fill="#FFBD76"
+                      radius={[0, 5, 5, 0]}
+                    />
+
+                    <Bar
+                      name="Uploads"
+                      dataKey="Uploads"
+                      fill="#003F47"
+                      radius={[0, 5, 5, 0]}
+                    />
+                  </BarChart>
+                </div>
+              </div>
+            ))
           ) : (
-            <img src="/src/assets/duck.jpg" className="w-40 sm:w-52 md:w-xs" />
+            <div className=" m-0 md:m-10 p-4 md:p-0 overflow-hidden">
+              <div className="w-full overflow-x-auto mt-8">
+                <BarChart
+                  style={{
+                    width: "100%",
+                    maxHeight: "40vh",
+                    aspectRatio: 1.618,
+                  }}
+                  responsive
+                  data={noPackets}
+                  margin={{
+                    top: 5,
+                    right: 0,
+                    left: 0,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="mac" />
+                  <YAxis width="auto" />
+
+                  <Legend />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#000",
+                    }}
+                  />
+                  <Bar
+                    dataKey="Downloads"
+                    radius={[10, 10, 0, 0]}
+                    fill="#FFBD76"
+                  />
+                  <Bar
+                    dataKey="Uploads"
+                    radius={[10, 10, 0, 0]}
+                    fill="#003F47"
+                  />
+                </BarChart>
+              </div>
+
+              <div className="w-full overflow-x-auto mt-8">
+                <LineChart
+                  style={{
+                    width: "100%",
+                    aspectRatio: 1.618,
+                    maxHeight: "40vh",
+                  }}
+                  responsive
+                  data={noPackets}
+                >
+                  <CartesianGrid />
+                  <Line
+                    dataKey="Downloads"
+                    stroke="#FFBD76"
+                    strokeWidth={"4"}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#000",
+                    }}
+                  />
+                  <Line dataKey="Uploads" stroke="#003F47" strokeWidth={"4"} />
+                  <XAxis dataKey="mac" />
+                  <YAxis />
+                  <Legend />
+                </LineChart>
+              </div>
+
+              <div className="w-full overflow-x-auto mt-10">
+                <BarChart
+                  data={noPackets}
+                  layout="vertical"
+                  style={{
+                    width: "100%",
+                    maxHeight: "40vh",
+                    aspectRatio: 2.18,
+                  }}
+                  responsive
+                  barCategoryGap={8}
+                  margin={{
+                    top: 10,
+                    right: 0,
+                    left: 0,
+                    bottom: 10,
+                  }}
+                >
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#000",
+                    }}
+                  />
+
+                  <YAxis
+                    type="category"
+                    dataKey="mac"
+                    width="auto"
+                    tick={{ fontSize: 11 }}
+                  />
+
+                  <XAxis type="number" width="auto" tick={{ fontSize: 11 }} />
+
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+
+                  <Legend />
+
+                  <Bar
+                    name="Downloads"
+                    dataKey="Downloads"
+                    fill="#FFBD76"
+                    radius={[0, 5, 5, 0]}
+                  />
+
+                  <Bar
+                    name="Uploads"
+                    dataKey="Uploads"
+                    fill="#003F47"
+                    radius={[0, 5, 5, 0]}
+                  />
+                </BarChart>
+              </div>
+            </div>
           )}
+        </div>
+      </div>
+    </>
+  );
+}
 
-          <div className="text-center w-full p-2 space-y-1">
-            <p className="text-2xl sm:text-2xl font-bold">"Midsense"</p>
+export default App;
 
-            <p className="font-sans text-xs sm:text-sm">
-              Makeshift monitoring through packet capture
-            </p>
-          </div>
+{
+  /**    <div className="bg-[#FFF6E9] p-5 m-5 rounded-lg">
+          {Object.entries(record).map(([key, value]) => (
+            <div key={key.toString()}>
+              {Object.entries(value).map(([valKey, valVal]) => (
+                <div key={valKey.toString()}>
+                  {Object.entries(valVal).map(([netKey, netVal]) => (
+                    <div>
+                      <div className="flex">
+                        <p>{valKey}</p>
+                        <p>{netKey}</p>
+                        <p>{netVal}</p>
+                      </div>
 
-          <div className="flex  sm:flex-row flex-wrap justify-center gap-3 px-2 w-full">
-            {openRecord === true ? (
-              <button
-                onClick={() => {
-                  setOpenRecord(false);
-                }}
-                className="border-2 rounded-lg p-2 hover:scale-105 bg-white text-black"
-              >
-                Close Records
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  (setOpenRecord(true), getRecords());
-                }}
-                className="border-2 rounded-lg p-2 hover:scale-105 bg-white text-black"
-              >
-                View Records
-              </button>
-            )}
+                      <div>------</div>
+                    </div>
+                  ))} 
+                </div>
+              ))}
+            </div>
+          ))}
+        </div> 
 
-            {listening == false ? (
-              <div className="flex items-center justify-center gap-3">
-                <button
-                  onClick={() => setListening(true)}
-                  className="border-2 rounded-lg p-2 hover:scale-105 bg-white text-black"
-                >
-                  Start Listening
-                </button>
 
-                <div className="w-5 h-5 bg-gray-600 rounded-full shrink-0"></div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center gap-3">
-                <button
-                  onClick={() => setListening(false)}
-                  className="border-2 rounded-lg p-2 hover:scale-105 bg-white text-black"
-                >
-                  Stop Listening
-                </button>
 
-                <div className="w-5 h-5 bg-green-700 rounded-full animate-pulse shrink-0"></div>
-              </div>
-            )}
-          </div>
 
+        
           {Object.keys(packet).length > 0 && listening == true && (
             <div className="w-full overflow-x-auto">
               {Object.entries(packet).map(([header, data]) => (
@@ -280,14 +633,14 @@ function App() {
                           {Object.entries(value).map(([atkey, atval]) =>
                             typeof atval == "number" ? (
                               <td
-                                className="p-2 border-2 whitespace-nowrap"
+                                className="p-2 border-2 [#FFF6E9]space-nowrap"
                                 key={atkey.toString()}
                               >
                                 {bytecon(atval)}
                               </td>
                             ) : (
                               <td
-                                className="p-2 border-2 whitespace-nowrap"
+                                className="p-2 border-2 [#FFF6E9]space-nowrap"
                                 key={atkey.toString()}
                               >
                                 {atval}
@@ -302,282 +655,24 @@ function App() {
               ))}
             </div>
           )}
-
+            
+          
           <button
-            className="p-4 bg-green-800 text-white rounded-xl hover:scale-105"
-            onClick={() => getDBRecords()}
-          >
-            DEBUGGING SUPABASE QUERY
-          </button>
-          {Object.entries(fetchedRecord).length > 0 && (
-            <div>
-              {Object.entries(fetchedRecord).map(([router, devices]) => (
-                <div className="border-2 mt-2" key={router}>
-                  <p className="place-self-center p-4">{router}</p>
+          className="p-4 bg-green-800 text-[#FFF6E9] rounded-xl hover:scale-105"
+          onClick={() => getDBRecords()}
+        >
+          DEBUGGING SUPABASE QUERY
+        </button>
+          
+          
 
-                  <table>
-                    <thead>
-                      <tr>
-                        <td className="border-2 p-2">Mac</td>
-                        <td className="border-2 p-2">Ip Address</td>
-                        <td className="border-2 p-2">Uploads</td>
-                        <td className="border-2 p-2">Downloads</td>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {Object.entries(devices).map(([devices, deviceStats]) => (
-                        <tr key={devices}>
-                          <td className="border-2 p-2">{deviceStats.mac} </td>
-                          <td className="border-2 p-2">{deviceStats.ip} </td>
-                          <td className="border-2 p-2">
-                            {deviceStats.uploads}{" "}
-                          </td>
-                          <td className="border-2 p-2">
-                            {deviceStats.downloads}{" "}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {Object.keys(chartData).length > 0 ? (
-          Object.entries(chartData).map(([router, data]) => (
-            <div
-              className="md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden"
-              key={router}
-            >
-              <p>{router}</p>
-              <div className="w-full overflow-x-auto mt-8">
-                <BarChart
-                  style={{
-                    width: "100%",
-                    maxHeight: "70vh",
-                    aspectRatio: 1.618,
-                  }}
-                  responsive
-                  data={data.length > 1 ? data : noPackets}
-                  margin={{
-                    top: 5,
-                    right: 0,
-                    left: 0,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#000",
-                    }}
-                  />
-                  <XAxis dataKey="mac" />
-                  <YAxis width="auto" />
-
-                  <Legend />
-                  <Bar
-                    dataKey="Downloads"
-                    radius={[10, 10, 0, 0]}
-                    fill="#ff6600"
-                  />
-                  <Bar
-                    dataKey="Uploads"
-                    radius={[10, 10, 0, 0]}
-                    fill="#ffffff"
-                  />
-                </BarChart>
-              </div>
-
-              <div className="w-full overflow-x-auto mt-8">
-                <LineChart
-                  style={{ width: "100%", aspectRatio: 1.618 }}
-                  responsive
-                  data={data.length > 1 ? data : noPackets}
-                >
-                  <CartesianGrid />
-                  <Line
-                    dataKey="Downloads"
-                    stroke="#ff6600"
-                    strokeWidth={"4"}
-                  />
-                  <Line dataKey="Uploads" stroke="#ffffff" strokeWidth={"4"} />
-                  <XAxis dataKey="mac" />
-                  <YAxis />
-                  <Legend />
-                </LineChart>
-              </div>
-
-              <div className="w-full overflow-x-auto mt-10">
-                <BarChart
-                  data={data.length > 1 ? data : noPackets}
-                  layout="vertical"
-                  style={{
-                    width: "100%",
-                    maxHeight: "70vh",
-                    aspectRatio: 1.618,
-                  }}
-                  responsive
-                  barCategoryGap={8}
-                  margin={{
-                    top: 10,
-                    right: 0,
-                    left: 0,
-                    bottom: 10,
-                  }}
-                >
-                  <YAxis
-                    type="category"
-                    dataKey="mac"
-                    width="auto"
-                    tick={{ fontSize: 11 }}
-                  />
-
-                  <XAxis type="number" width="auto" tick={{ fontSize: 11 }} />
-
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-
-                  <Legend />
-
-                  <Bar
-                    name="Downloads"
-                    dataKey="Downloads"
-                    fill="#ff6600"
-                    radius={[0, 5, 5, 0]}
-                  />
-
-                  <Bar
-                    name="Uploads"
-                    dataKey="Uploads"
-                    fill="#ffffff"
-                    radius={[0, 5, 5, 0]}
-                  />
-                </BarChart>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden">
-            <div className="w-full overflow-x-auto mt-8">
-              <BarChart
-                style={{
-                  width: "100%",
-                  maxHeight: "70vh",
-                  aspectRatio: 1.618,
-                }}
-                responsive
-                data={noPackets}
-                margin={{
-                  top: 5,
-                  right: 0,
-                  left: 0,
-                  bottom: 5,
-                }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mac" />
-                <YAxis width="auto" />
-
-                <Legend />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#000",
-                  }}
-                />
-                <Bar
-                  dataKey="Downloads"
-                  radius={[10, 10, 0, 0]}
-                  fill="#ff6600"
-                />
-                <Bar dataKey="Uploads" radius={[10, 10, 0, 0]} fill="#fcf7e8" />
-              </BarChart>
-            </div>
-
-            <div className="w-full overflow-x-auto mt-8">
-              <LineChart
-                style={{ width: "100%", aspectRatio: 1.618 }}
-                responsive
-                data={noPackets}
-              >
-                <CartesianGrid />
-                <Line dataKey="Downloads" stroke="#ff6600" strokeWidth={"4"} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#000",
-                  }}
-                />
-                <Line dataKey="Uploads" stroke="#ffffff" strokeWidth={"4"} />
-                <XAxis dataKey="mac" />
-                <YAxis />
-                <Legend />
-              </LineChart>
-            </div>
-
-            <div className="w-full overflow-x-auto mt-10">
-              <BarChart
-                data={noPackets}
-                layout="vertical"
-                style={{
-                  width: "100%",
-                  maxHeight: "70vh",
-                  aspectRatio: 1.618,
-                }}
-                responsive
-                barCategoryGap={8}
-                margin={{
-                  top: 10,
-                  right: 0,
-                  left: 0,
-                  bottom: 10,
-                }}
-              >
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#000",
-                  }}
-                />
-
-                <YAxis
-                  type="category"
-                  dataKey="mac"
-                  width="auto"
-                  tick={{ fontSize: 11 }}
-                />
-
-                <XAxis type="number" width="auto" tick={{ fontSize: 11 }} />
-
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-
-                <Legend />
-
-                <Bar
-                  name="Downloads"
-                  dataKey="Downloads"
-                  fill="#ff6600"
-                  radius={[0, 5, 5, 0]}
-                />
-
-                <Bar
-                  name="Uploads"
-                  dataKey="Uploads"
-                  fill="#ffffff"
-                  radius={[0, 5, 5, 0]}
-                />
-              </BarChart>
-            </div>
-          </div>
-        )}
-      </div>
-      {record && openRecord == true && (
+         {record && openRecord == true && (
         <div className="bg-[#161618] p-2 font-mono">
-          <div className="bg-white p-4 sm:p-5 rounded-md m-2 sm:m-5">
+          <div className="bg-[#FFF6E9] p-4 sm:p-5 rounded-md m-2 sm:m-5">
             <p className="text-sm sm:text-base">Historical Records</p>
           </div>
 
-          <div className="p-2 sm:p-5 bg-white rounded-lg m-2 sm:m-5 flex justify-center overflow-x-auto">
+          <div className="p-2 sm:p-5 bg-[#FFF6E9] rounded-lg m-2 sm:m-5 flex justify-center overflow-x-auto">
             <table className="w-full min-w-[500px]">
               <thead className="border-2">
                 <tr>
@@ -597,14 +692,14 @@ function App() {
                       {Object.entries(rvals).map(([rvalKey, rvalVal]) =>
                         typeof rvalVal == "number" ? (
                           <td
-                            className="p-3 sm:p-5 border-2 whitespace-nowrap"
+                            className="p-3 sm:p-5 border-2 [#FFF6E9]space-nowrap"
                             key={rvalKey}
                           >
                             {bytecon(rvalVal)}
                           </td>
                         ) : (
                           <td
-                            className="p-3 sm:p-5 border-2 whitespace-nowrap"
+                            className="p-3 sm:p-5 border-2 [#FFF6E9]space-nowrap"
                             key={rvalKey}
                           >
                             {rvalVal.toString()}
@@ -619,32 +714,14 @@ function App() {
           </div>
         </div>
       )}
-    </>
-  );
-}
 
-export default App;
-
-{
-  /**    <div className="bg-white p-5 m-5 rounded-lg">
-          {Object.entries(record).map(([key, value]) => (
-            <div key={key.toString()}>
-              {Object.entries(value).map(([valKey, valVal]) => (
-                <div key={valKey.toString()}>
-                  {Object.entries(valVal).map(([netKey, netVal]) => (
-                    <div>
-                      <div className="flex">
-                        <p>{valKey}</p>
-                        <p>{netKey}</p>
-                        <p>{netVal}</p>
-                      </div>
-
-                      <div>------</div>
-                    </div>
-                  ))} 
-                </div>
-              ))}
-            </div>
-          ))}
-        </div> */
+      <button
+        className="p-4 bg-green-800 text-[#FFF6E9] rounded-xl hover:scale-105"
+        onClick={() => getDBRecords()}
+      >
+        DEBUGGING SUPABASE QUERY
+      </button>
+          
+          
+          */
 }
