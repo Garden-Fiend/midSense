@@ -76,6 +76,21 @@ function App() {
     [Router: string]: chartFuckingData[];
   };
 
+  type device_stats = {
+    timestamp: string;
+    id: string;
+    download: number;
+    uploads: number;
+    mac: string;
+    router: number;
+  };
+
+  type router_stats = {
+    [router: number]: device_stats;
+  };
+
+  const [fetchedRecord, setFetchRecord] = useState<router_stats>({});
+
   const [packet, setPackets] = useState<routers>({});
   const [record, setRecords] = useState<Record>({});
   const [chartData, setChartData] = useState<Charting>({});
@@ -105,7 +120,7 @@ function App() {
   }
 
   async function getRecords() {
-    const request = await fetch("http://127.0.0.1:8000/getRecords");
+    const request = await fetch("http://127.0.0.1:8000/fetchRecords");
     const response = await request.json();
 
     setRecords(response);
@@ -120,6 +135,45 @@ function App() {
       return `${(bytes / 100000).toFixed(2)} mb`;
     } else if (bytes < 1000000000000) {
       return `${(bytes / 1000000000).toFixed(2)} gb`;
+    }
+  }
+
+  function cumulate(data: any) {
+    const cumulatedData = data.reduce(
+      (fetchedRouter: any, fetchedDevice: any) => {
+        const router_id = fetchedDevice.router;
+
+        if (!fetchedRouter[router_id]) {
+          fetchedRouter[router_id] = [];
+        }
+
+        const device = fetchedRouter[router_id].find(
+          (device: any) => device.device_id === fetchedDevice.device_id,
+        );
+
+        if (device) {
+          device.uploads += fetchedDevice.uploads;
+          device.downloads += fetchedDevice.downloads;
+        } else {
+          fetchedRouter[router_id].push(fetchedDevice);
+        }
+
+        return fetchedRouter;
+      },
+      {},
+    );
+
+    return cumulatedData;
+  }
+
+  async function getDBRecords() {
+    const request = await fetch("http://127.0.0.1:8000/fetchRecords");
+    const response = await request.json();
+
+    if (response) {
+      const formatted = cumulate(response);
+      setFetchRecord(formatted);
+      console.log(formatted);
     }
   }
 
@@ -247,6 +301,13 @@ function App() {
               ))}
             </div>
           )}
+
+          <button
+            className="p-4 bg-green-800 text-white rounded-xl hover:scale-105"
+            onClick={() => getDBRecords()}
+          >
+            DEBUGGING SUPABASE QUERY
+          </button>
         </div>
 
         {Object.keys(chartData).length > 0 ? (

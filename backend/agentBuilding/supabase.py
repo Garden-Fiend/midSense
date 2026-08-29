@@ -1,7 +1,7 @@
 import os
 import psycopg2
 from dotenv import load_dotenv
-
+from psycopg2.extras import RealDictCursor
 
 load_dotenv()
 
@@ -9,11 +9,10 @@ DB_URL = os.getenv("DATABASE_URL")
 
 
 def throwCapture(capturedRouterMac, capturedRouterHostname, capturedDevices):
-    
-    
-    print("CAPTURED ROUTER HOSTNAME: " ,capturedRouterHostname)
+
+    print("CAPTURED ROUTER HOSTNAME: ", capturedRouterHostname)
     print("CAPTURED ROUTER MAC: ", capturedRouterMac)
-    print("CAPTURED DEVICES:" ,capturedDevices)
+    print("CAPTURED DEVICES:", capturedDevices)
 
     connection = psycopg2.connect(DB_URL)
     scribe = connection.cursor()
@@ -28,7 +27,6 @@ def throwCapture(capturedRouterMac, capturedRouterHostname, capturedDevices):
     for device in capturedDevices:
 
         print("INSERT QUERY FOR DEVICE: ")
-
         scribe.execute("INSERT INTO devices (router_id,mac,ip) VALUES (%s,%s,%s) ON CONFLICT (router_id,mac) DO UPDATE SET ip = EXCLUDED.ip RETURNING id",
                        (router_id, device, capturedDevices[device]["IpAddress"]))
 
@@ -42,3 +40,16 @@ def throwCapture(capturedRouterMac, capturedRouterHostname, capturedDevices):
     connection.commit()
     scribe.close()
     connection.close()
+
+
+def getCapture():
+
+    connection = psycopg2.connect(DB_URL)
+    scribe = connection.cursor(cursor_factory=RealDictCursor)
+
+    print("GETTING RECORDS")
+
+    scribe.execute(" SELECT * FROM records")
+    records = scribe.fetchall()
+
+    return records

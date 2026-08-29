@@ -1,7 +1,7 @@
 
 from fastapi import FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
-from agentBuilding.supabase import throwCapture
+from agentBuilding.supabase import throwCapture, getCapture
 
 
 import json
@@ -53,9 +53,10 @@ def incomingPacket(data: dict,hostname:str = Header(...), mac: str = Header(...)
 
     formattedData = json.dumps(data, indent=4)
     print(hostname)
+    print(mac)
     print(formattedData)
     
-    throwCapture(mac,hostname,formattedData)
+    throwCapture(mac,hostname,data)
     
     return {"status": "recieved"}
 
@@ -74,3 +75,8 @@ def throwRecords():
         return packetSnapshots
     else:
         return "No records yet"
+
+@app.get("/fetchRecords")
+def callSupabaseQuery():    
+    print("CALLING THE RECORD CALL")
+    return getCapture()
