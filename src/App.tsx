@@ -79,14 +79,15 @@ function App() {
   type device_stats = {
     timestamp: string;
     id: string;
-    download: number;
+    ip:string
+    downloads: number;
     uploads: number;
     mac: string;
     router: number;
   };
 
   type router_stats = {
-    [router: number]: device_stats;
+    [router: number]: device_stats[];
   };
 
   const [fetchedRecord, setFetchRecord] = useState<router_stats>({});
@@ -308,6 +309,41 @@ function App() {
           >
             DEBUGGING SUPABASE QUERY
           </button>
+          {Object.entries(fetchedRecord).length > 0 && (
+            <div>
+              {Object.entries(fetchedRecord).map(([router, devices]) => (
+                <div className="border-2 mt-2" key={router}>
+                  <p className="place-self-center p-4">{router}</p>
+
+                  <table>
+                    <thead>
+                      <tr>
+                        <td className="border-2 p-2">Mac</td>
+                        <td className="border-2 p-2">Ip Address</td>
+                        <td className="border-2 p-2">Uploads</td>
+                        <td className="border-2 p-2">Downloads</td>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {Object.entries(devices).map(([devices, deviceStats]) => (
+                        <tr key={devices}>
+                          <td className="border-2 p-2">{deviceStats.mac} </td>
+                          <td className="border-2 p-2">{deviceStats.ip} </td>
+                          <td className="border-2 p-2">
+                            {deviceStats.uploads}{" "}
+                          </td>
+                          <td className="border-2 p-2">
+                            {deviceStats.downloads}{" "}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {Object.keys(chartData).length > 0 ? (
