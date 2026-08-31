@@ -6,7 +6,7 @@ homePc = "Local Area Connection* 12"
 officePc = "Local Area Connection* 2"
 temporary = "Ethernet"
 
-selectedNic = officePc
+selectedNic = homePc
 
 
         

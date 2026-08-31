@@ -4,8 +4,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Line,
-  LineChart,
   Legend,
   XAxis,
   Tooltip,
@@ -13,69 +11,6 @@ import {
 } from "recharts";
 
 function App() {
-  const noPackets = [
-    {
-      IpAddress: "None",
-      Uploads: 50,
-      Downloads: 20,
-      mac: "Device A",
-    },
-    {
-      IpAddress: "None",
-      Uploads: 34,
-      Downloads: 100,
-      mac: "Device B",
-    },
-    {
-      IpAddress: "None",
-      Uploads: 84,
-      Downloads: 90,
-      mac: "Device C",
-    },
-  ];
-
-  interface Packet {
-    Downloads: string;
-    Uploads: string;
-    IpAddress: string;
-  }
-
-  interface deviceStats {
-    [Mac: string]: Packet;
-  }
-
-  interface routerStats {
-    routerId: string;
-    devices: deviceStats;
-  }
-
-  interface routers {
-    [router: string]: routerStats;
-  }
-
-  type Device = {
-    Ip: string;
-    Upload: number;
-    Download: number;
-  };
-
-  type Record = {
-    [Id: number]: {
-      [Mac: string]: Device;
-    };
-  };
-
-  type chartFuckingData = {
-    IpAddress: string;
-    Uploads: number;
-    Downloads: number;
-    mac: string;
-  };
-
-  type Charting = {
-    [Router: string]: chartFuckingData[];
-  };
-
   type device_stats = {
     timestamp: string;
     id: string;
@@ -91,41 +26,6 @@ function App() {
   };
 
   const [fetchedRecord, setFetchRecord] = useState<router_stats>({});
-
-  const [packet, setPackets] = useState<routers>({});
-  const [record, setRecords] = useState<Record>({});
-  const [chartData, setChartData] = useState<Charting>({});
-
-  async function getStat() {
-    const request = await fetch("http://127.0.0.1:8000/getPackets");
-    const response = await request.json();
-
-    const length = Object.keys(response).length;
-    console.log(length);
-    console.log(response);
-    setPackets(response);
-
-    if (Object.entries(response).length > 0) {
-      const chartDataHolder = Object.fromEntries(
-        Object.entries(response).map(([Headers, Data]) => [
-          [Headers],
-          Object.entries(Data.devices).map(([datakey, dataVal]) => ({
-            mac: datakey,
-            ...dataVal,
-          })),
-        ]),
-      );
-      console.log(chartDataHolder);
-      setChartData(chartDataHolder);
-    }
-  }
-
-  async function getRecords() {
-    const request = await fetch("http://127.0.0.1:8000/fetchRecords");
-    const response = await request.json();
-
-    setRecords(response);
-  }
 
   function bytecon(bytes: number) {
     if (bytes < 1000) {
@@ -187,7 +87,7 @@ function App() {
       return;
     }
 
-    const interval = setInterval(getStat, 50000);
+    const interval = setInterval(getDBRecords, 50000);
 
     return () => {
       clearInterval(interval);
@@ -233,7 +133,7 @@ function App() {
                 ) : (
                   <button
                     onClick={() => {
-                      (setOpenRecord(true), getRecords());
+                      getDBRecords();
                     }}
                     className="border-2 rounded-lg p-2 hover:scale-105 bg-[#FFF6E9] text-[#0A171D]"
                   >
@@ -268,8 +168,22 @@ function App() {
             </div>
           </div>
 
-          <div className="w-3/4">
+          <div className="w-3/4 pt-5">
             <div className="flex gap-5 w-full">
+              <div className="flex items-center gap-2">
+                <label className="border-2 p-2 rounded-xl">Gateway</label>
+
+                <select
+                  className="border-b-2 p-2"
+                  onChange={(e) => setFilter(e.target.value)}
+                >
+                  {Object.keys(fetchedRecord).map((gateway) => (
+                    <option value={gateway} key={gateway}>
+                      {gateway}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <input
                 type="text"
                 placeholder="Find a Gateway"
@@ -327,254 +241,114 @@ function App() {
                   ))}
               </div>
             ) : (
-              <div className="p-40 mt-10 flex justify-center rounded-xl bg-[#003f47]">
+              <div className="p-40 mt-10 flex justify-center rounded-xl border-3 border-[#FFF6E9]">
                 <p>No Gateway Selected Yet</p>
               </div>
             )}
           </div>
         </div>
 
-        <div className="bg-[#FFF6E9] h-fit">
-          {Object.keys(chartData).length > 0 ? (
-            Object.entries(chartData).map(([router, data]) => (
-              <div
-                className="md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden"
-                key={router}
-              >
-                <p>{router}</p>
-                <div className="w-full overflow-x-auto mt-8">
-                  <BarChart
-                    style={{
-                      width: "100%",
-                      maxHeight: "70vh",
-                      aspectRatio: 1.618,
-                    }}
-                    responsive
-                    data={data.length > 1 ? data : noPackets}
-                    margin={{
-                      top: 5,
-                      right: 0,
-                      left: 0,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#000",
+        <div className="bg-[#FFF6E9] h-auto">
+          {Object.keys(fetchedRecord).length > 0 &&
+            Object.entries(fetchedRecord)
+              .filter(([router]) => router === filter)
+              .map(([router, data]) => (
+                <div
+                  className="md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden"
+                  key={router}
+                >
+                  <p>{router}</p>
+                  <div className="w-full overflow-x-auto mt-8">
+                    <BarChart
+                      style={{
+                        width: "100%",
+                        maxHeight: "70vh",
+                        aspectRatio: 1.618,
                       }}
-                    />
-                    <XAxis dataKey="mac" />
-                    <YAxis width="auto" />
+                      responsive
+                      data={data}
+                      margin={{
+                        top: 5,
+                        right: 0,
+                        left: 0,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#000",
+                        }}
+                      />
+                      <XAxis dataKey="mac" />
+                      <YAxis width="auto" />
 
-                    <Legend />
-                    <Bar
-                      dataKey="Downloads"
-                      radius={[10, 10, 0, 0]}
-                      fill="#FFBD76"
-                    />
-                    <Bar
-                      dataKey="Uploads"
-                      radius={[10, 10, 0, 0]}
-                      fill="#003F47"
-                    />
-                  </BarChart>
+                      <Legend />
+                      <Bar
+                        dataKey="downloads"
+                        radius={[10, 10, 0, 0]}
+                        fill="#FFBD76"
+                      />
+                      <Bar
+                        dataKey="uploads"
+                        radius={[10, 10, 0, 0]}
+                        fill="#003F47"
+                      />
+                    </BarChart>
+                  </div>
+
+                  <div className="w-full overflow-x-auto mt-10">
+                    <BarChart
+                      data={data}
+                      layout="vertical"
+                      style={{
+                        width: "100%",
+                        maxHeight: "70vh",
+                        aspectRatio: 1.618,
+                      }}
+                      responsive
+                      barCategoryGap={8}
+                      margin={{
+                        top: 10,
+                        right: 0,
+                        left: 0,
+                        bottom: 10,
+                      }}
+                    >
+                      <YAxis
+                        type="category"
+                        dataKey="mac"
+                        width="auto"
+                        tick={{ fontSize: 11 }}
+                      />
+
+                      <XAxis
+                        type="number"
+                        width="auto"
+                        tick={{ fontSize: 11 }}
+                      />
+
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+
+                      <Legend />
+
+                      <Bar
+                        name="Downloads"
+                        dataKey="downloads"
+                        fill="#FFBD76"
+                        radius={[0, 5, 5, 0]}
+                      />
+
+                      <Bar
+                        name="Uploads"
+                        dataKey="uploads"
+                        fill="#003F47"
+                        radius={[0, 5, 5, 0]}
+                      />
+                    </BarChart>
+                  </div>
                 </div>
-
-                <div className="w-full overflow-x-auto mt-8">
-                  <LineChart
-                    style={{ width: "100%", aspectRatio: 1.618 }}
-                    responsive
-                    data={data.length > 1 ? data : noPackets}
-                  >
-                    <CartesianGrid />
-                    <Line
-                      dataKey="Downloads"
-                      stroke="#FFBD76"
-                      strokeWidth={"4"}
-                    />
-                    <Line
-                      dataKey="Uploads"
-                      stroke="#003F47"
-                      strokeWidth={"4"}
-                    />
-                    <XAxis dataKey="mac" />
-                    <YAxis />
-                    <Legend />
-                  </LineChart>
-                </div>
-
-                <div className="w-full overflow-x-auto mt-10">
-                  <BarChart
-                    data={data.length > 1 ? data : noPackets}
-                    layout="vertical"
-                    style={{
-                      width: "100%",
-                      maxHeight: "70vh",
-                      aspectRatio: 1.618,
-                    }}
-                    responsive
-                    barCategoryGap={8}
-                    margin={{
-                      top: 10,
-                      right: 0,
-                      left: 0,
-                      bottom: 10,
-                    }}
-                  >
-                    <YAxis
-                      type="category"
-                      dataKey="mac"
-                      width="auto"
-                      tick={{ fontSize: 11 }}
-                    />
-
-                    <XAxis type="number" width="auto" tick={{ fontSize: 11 }} />
-
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-
-                    <Legend />
-
-                    <Bar
-                      name="Downloads"
-                      dataKey="Downloads"
-                      fill="#FFBD76"
-                      radius={[0, 5, 5, 0]}
-                    />
-
-                    <Bar
-                      name="Uploads"
-                      dataKey="Uploads"
-                      fill="#003F47"
-                      radius={[0, 5, 5, 0]}
-                    />
-                  </BarChart>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className=" m-0 md:m-10 p-4 md:p-0 overflow-hidden">
-              <div className="w-full overflow-x-auto mt-8">
-                <BarChart
-                  style={{
-                    width: "100%",
-                    maxHeight: "40vh",
-                    aspectRatio: 1.618,
-                  }}
-                  responsive
-                  data={noPackets}
-                  margin={{
-                    top: 5,
-                    right: 0,
-                    left: 0,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="mac" />
-                  <YAxis width="auto" />
-
-                  <Legend />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#000",
-                    }}
-                  />
-                  <Bar
-                    dataKey="Downloads"
-                    radius={[10, 10, 0, 0]}
-                    fill="#FFBD76"
-                  />
-                  <Bar
-                    dataKey="Uploads"
-                    radius={[10, 10, 0, 0]}
-                    fill="#003F47"
-                  />
-                </BarChart>
-              </div>
-
-              <div className="w-full overflow-x-auto mt-8">
-                <LineChart
-                  style={{
-                    width: "100%",
-                    aspectRatio: 1.618,
-                    maxHeight: "40vh",
-                  }}
-                  responsive
-                  data={noPackets}
-                >
-                  <CartesianGrid />
-                  <Line
-                    dataKey="Downloads"
-                    stroke="#FFBD76"
-                    strokeWidth={"4"}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#000",
-                    }}
-                  />
-                  <Line dataKey="Uploads" stroke="#003F47" strokeWidth={"4"} />
-                  <XAxis dataKey="mac" />
-                  <YAxis />
-                  <Legend />
-                </LineChart>
-              </div>
-
-              <div className="w-full overflow-x-auto mt-10">
-                <BarChart
-                  data={noPackets}
-                  layout="vertical"
-                  style={{
-                    width: "100%",
-                    maxHeight: "40vh",
-                    aspectRatio: 2.18,
-                  }}
-                  responsive
-                  barCategoryGap={8}
-                  margin={{
-                    top: 10,
-                    right: 0,
-                    left: 0,
-                    bottom: 10,
-                  }}
-                >
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#000",
-                    }}
-                  />
-
-                  <YAxis
-                    type="category"
-                    dataKey="mac"
-                    width="auto"
-                    tick={{ fontSize: 11 }}
-                  />
-
-                  <XAxis type="number" width="auto" tick={{ fontSize: 11 }} />
-
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-
-                  <Legend />
-
-                  <Bar
-                    name="Downloads"
-                    dataKey="Downloads"
-                    fill="#FFBD76"
-                    radius={[0, 5, 5, 0]}
-                  />
-
-                  <Bar
-                    name="Uploads"
-                    dataKey="Uploads"
-                    fill="#003F47"
-                    radius={[0, 5, 5, 0]}
-                  />
-                </BarChart>
-              </div>
-            </div>
-          )}
+              ))}
         </div>
       </div>
     </>
@@ -722,6 +496,112 @@ export default App;
         DEBUGGING SUPABASE QUERY
       </button>
           
+
+
+
+       async function getStat() {
+    const request = await fetch("http://127.0.0.1:8000/getPackets");
+    const response = await request.json();
+
+    const length = Object.keys(response).length;
+    console.log(length);
+    console.log(response);
+    setPackets(response);
+
+    if (Object.entries(response).length > 0) {
+      const chartDataHolder = Object.fromEntries(
+        Object.entries(response).map(([Headers, Data]) => [
+          [Headers],
+          Object.entries(Data.devices).map(([datakey, dataVal]) => ({
+            mac: datakey,
+            ...dataVal,
+          })),
+        ]),
+      );
+      console.log(chartDataHolder);
+      setChartData(chartDataHolder);
+    }
+  }
+
+  async function getRecords() {
+    const request = await fetch("http://127.0.0.1:8000/fetchRecords");
+    const response = await request.json();
+
+    setRecords(response);
+  }
+    
+
+
+  const noPackets = [
+    {
+      IpAddress: "None",
+      Uploads: 50,
+      Downloads: 20,
+      mac: "Device A",
+    },
+    {
+      IpAddress: "None",
+      Uploads: 34,
+      Downloads: 100,
+      mac: "Device B",
+    },
+    {
+      IpAddress: "None",
+      Uploads: 84,
+      Downloads: 90,
+      mac: "Device C",
+    },
+  ];
+
+  const [packet, setPackets] = useState<routers>({});
+  const [record, setRecords] = useState<Record>({});
+  const [chartData, setChartData] = useState<Charting>({});
+
+
+
+  
+  interface Packet {
+    Downloads: string;
+    Uploads: string;
+    IpAddress: string;
+  }
+
+  interface deviceStats {
+    [Mac: string]: Packet;
+  }
+
+  interface routerStats {
+    routerId: string;
+    devices: deviceStats;
+  }
+
+  interface routers {
+    [router: string]: routerStats;
+  }
+
+  type Device = {
+    Ip: string;
+    Upload: number;
+    Download: number;
+  };
+
+  type Record = {
+    [Id: number]: {
+      [Mac: string]: Device;
+    };
+  };
+
+  type chartFuckingData = {
+    IpAddress: string;
+    Uploads: number;
+    Downloads: number;
+    mac: string;
+  };
+
+  type Charting = {
+    [Router: string]: chartFuckingData[];
+  };
+
           
           */
 }
