@@ -6,7 +6,7 @@ homePc = "Local Area Connection* 12"
 officePc = "Local Area Connection* 2"
 temporary = "Ethernet"
 
-selectedNic = homePc
+selectedNic = officePc
 
 
         
@@ -96,7 +96,7 @@ def observe(pkt):
     
 while True:
     
-    sniff(iface=selectedNic,timeout=20,prn=observe)
+    sniff(iface=selectedNic,timeout=300,prn=observe)
 
     for device in deviceTable:
         print("-------------------------")

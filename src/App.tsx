@@ -21,22 +21,39 @@ function App() {
     router: number;
   };
 
+  type rawRecordDevices = {
+    id: number;
+    router: number;
+    device_id: string;
+    mac: string;
+    uploads: number;
+    downloads: number;
+    created_at: string;
+    ip: string;
+  };
+
+  type byteSegment = "GB" | "MB" | "KB";
+
   type router_stats = {
     [router: number]: device_stats[];
   };
 
+  const [rawData, setRawData] = useState<rawRecordDevices[]>([]);
   const [fetchedRecord, setFetchRecord] = useState<router_stats>({});
 
-  function bytecon(bytes: number) {
-    if (bytes < 1000) {
-      return bytes;
-    } else if (bytes < 1000000) {
-      return `${(bytes / 1000).toFixed(2)} kb`;
-    } else if (bytes < 1000000000) {
-      return `${(bytes / 100000).toFixed(2)} mb`;
-    } else if (bytes < 1000000000000) {
-      return `${(bytes / 1000000000).toFixed(2)} gb`;
-    }
+  const [segmentFilter, setSegmentFilter] = useState<byteSegment>("MB");
+
+  function bytecon(
+    bytes: number,
+    usage: "table" | "graph",
+    segment: "GB" | "MB" | "KB",
+  ) {
+    const keyDivs = { KB: 1000, MB: 1000000, GB: 1000000000 };
+    const converted = bytes / keyDivs[segment];
+
+    return usage === "graph"
+      ? converted
+      : `${converted.toFixed(2)} ${segment.toLowerCase()}`;
   }
 
   function cumulate(data: any) {
@@ -54,9 +71,12 @@ function App() {
 
         if (device) {
           device.uploads += fetchedDevice.uploads;
+
           device.downloads += fetchedDevice.downloads;
         } else {
-          fetchedRouter[router_id].push(fetchedDevice);
+          fetchedRouter[router_id].push({
+            ...fetchedDevice,
+          });
         }
 
         return fetchedRouter;
@@ -72,15 +92,15 @@ function App() {
     const response = await request.json();
 
     if (response) {
-      const formatted = cumulate(response);
-      setFetchRecord(formatted);
-      console.log(formatted);
+      setRawData(response);
+      console.log(response[0]);
     }
   }
 
   const [listening, setListening] = useState(false);
   const [openRecord, setOpenRecord] = useState(false);
-  const [filter, setFilter] = useState("InsertGateway");
+  const [filter, setFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
 
   useEffect(() => {
     if (!listening) {
@@ -94,11 +114,26 @@ function App() {
     };
   }, [listening]);
 
+  useEffect(() => {
+    const formatted = rawData.filter((filtered) => {
+      const routerMatches =
+        filtered.router.toString() === filter || filter === "";
+      const dateMatches =
+        filtered.created_at === dateFilter || dateFilter === "";
+
+      return routerMatches && dateMatches;
+    });
+
+    console.log(formatted);
+
+    setFetchRecord(cumulate(formatted));
+  }, [dateFilter, rawData, filter, segmentFilter]);
+
   return (
     <>
-      <div className="bg-[#161618] text-[#FFF6E9] text-sm font-mono min-h-screen  md:justify-center md:items-start">
-        <div className="flex items-start justify-center gap-20 p-10">
-          <div className="w-1/4">
+      <div className="bg-[#161618] text-[#FFF6E9] text-sm font-mono min-h-screen md:justify-center md:items-start">
+        <div className="flex flex-col md:flex-row items-start justify-center gap-6 md:gap-20 p-4 md:p-10">
+          <div className="w-full md:w-1/4">
             <div className="flex flex-col items-center gap-6 md:gap-10 w-full">
               {listening == true ? (
                 <img
@@ -113,14 +148,14 @@ function App() {
               )}
 
               <div className="text-center w-full p-2 space-y-1">
-                <p className="text-2xl sm:text-2xl font-bold">"Midsense"</p>
+                <p className="text-2xl font-bold">"Midsense"</p>
 
                 <p className="font-sans text-xs sm:text-sm">
                   Makeshift monitoring through packet capture
                 </p>
               </div>
 
-              <div className="flex sm:flex-row flex-wrap justify-center gap-2 px-2 w-full">
+              <div className="flex flex-wrap justify-center gap-2 px-2 w-full">
                 {openRecord === true ? (
                   <button
                     onClick={() => {
@@ -168,187 +203,238 @@ function App() {
             </div>
           </div>
 
-          <div className="w-3/4 pt-5">
-            <div className="flex gap-5 w-full">
-              <div className="flex items-center gap-2">
-                <label className="border-2 p-2 rounded-xl">Gateway</label>
+          <div className="w-full md:w-3/4 pt-5">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-5 w-full">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <label className="border-2 p-2 rounded-xl whitespace-nowrap">
+                  Gateway
+                </label>
 
                 <select
-                  className="border-b-2 p-2"
+                  className="border-b-2 p-2 w-full sm:w-auto"
                   onChange={(e) => setFilter(e.target.value)}
                 >
-                  {Object.keys(fetchedRecord).map((gateway) => (
+                  {Object.keys(cumulate(rawData)).map((gateway) => (
                     <option value={gateway} key={gateway}>
                       {gateway}
                     </option>
                   ))}
                 </select>
               </div>
+
               <input
                 type="text"
                 placeholder="Find a Gateway"
-                value={filter}
                 className="w-full border-2 p-3 rounded-xl"
-                onChange={(e) => setFilter(e.target.value)}
               ></input>
 
-              <button className="p-3 bg-[#FFF6E9] text-[#0A171D] rounded-xl">
+              <button className="p-3 bg-[#FFF6E9] text-[#0A171D] rounded-xl w-full sm:w-auto whitespace-nowrap">
                 Search
               </button>
             </div>
+
             {Object.entries(fetchedRecord).length > 0 ? (
               <div>
                 {Object.entries(fetchedRecord)
-                  .filter(([router]) => router == filter)
+
                   .map(([router, devices]) => (
                     <div className="border-2 mt-2" key={router}>
                       <p className="place-self-center p-4 bg-[#003f47] w-full text-center">
                         {router}
                       </p>
 
-                      <table className="w-full">
-                        <thead>
-                          <tr>
-                            <td className="border-2 p-2">Mac</td>
-                            <td className="border-2 p-2">Ip Address</td>
-                            <td className="border-2 p-2">Uploads</td>
-                            <td className="border-2 p-2">Downloads</td>
-                          </tr>
-                        </thead>
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[500px]">
+                          <thead>
+                            <tr>
+                              <td className="border-2 p-2">Mac</td>
+                              <td className="border-2 p-2">Ip Address</td>
+                              <td className="border-2 p-2">Uploads</td>
+                              <td className="border-2 p-2">Downloads</td>
+                            </tr>
+                          </thead>
 
-                        <tbody>
-                          {Object.entries(devices).map(
-                            ([devices, deviceStats]) => (
-                              <tr key={devices}>
-                                <td className="border-2 p-2">
-                                  {deviceStats.mac}{" "}
-                                </td>
-                                <td className="border-2 p-2">
-                                  {deviceStats.ip}{" "}
-                                </td>
-                                <td className="border-2 p-2">
-                                  {bytecon(deviceStats.uploads)}{" "}
-                                </td>
-                                <td className="border-2 p-2">
-                                  {bytecon(deviceStats.downloads)}{" "}
-                                </td>
-                              </tr>
-                            ),
-                          )}
-                        </tbody>
-                      </table>
+                          <tbody>
+                            {Object.entries(devices).map(
+                              ([devices, deviceStats]) => (
+                                <tr key={devices}>
+                                  <td className="border-2 p-2">
+                                    {deviceStats.mac}{" "}
+                                  </td>
+                                  <td className="border-2 p-2">
+                                    {deviceStats.ip}{" "}
+                                  </td>
+                                  <td className="border-2 p-2">
+                                    {bytecon(
+                                      deviceStats.uploads,
+                                      "table",
+                                      segmentFilter,
+                                    )}{" "}
+                                  </td>
+                                  <td className="border-2 p-2">
+                                    {bytecon(
+                                      deviceStats.downloads,
+                                      "table",
+                                      segmentFilter,
+                                    )}{" "}
+                                  </td>
+                                </tr>
+                              ),
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   ))}
               </div>
             ) : (
-              <div className="p-40 mt-10 flex justify-center rounded-xl border-3 border-[#FFF6E9]">
+              <div className="p-10 sm:p-20 md:p-40 mt-10 flex justify-center rounded-xl border-3 border-[#FFF6E9]">
                 <p>No Gateway Selected Yet</p>
               </div>
             )}
           </div>
         </div>
 
-        <div className="bg-[#FFF6E9] h-auto">
-          {Object.keys(fetchedRecord).length > 0 &&
-            Object.entries(fetchedRecord)
-              .filter(([router]) => router === filter)
-              .map(([router, data]) => (
-                <div
-                  className="md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden"
-                  key={router}
+        <div
+          className={`bg-[#FFF6E9] ${Object.keys(fetchedRecord).length > 0 ? "h-auto" : "h-screen"}`}
+        >
+          <div className="text-black px-4 sm:px-8 py-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+            <div className="text-xl sm:text-2xl font-bold">{filter}</div>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <p className="border-2 p-3 rounded-xl bg-[#161618] text-white whitespace-nowrap">
+                  Date
+                </p>
+                <input type="date" className="border-b-3 p-3"></input>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <p className="border-2 p-3 rounded-xl bg-[#161618] text-white whitespace-nowrap">
+                  Byte Unit
+                </p>
+
+                <select
+                  className="border-b-3 p-3"
+                  onChange={(e) =>
+                    setSegmentFilter(e.target.value as byteSegment)
+                  }
                 >
-                  <p>{router}</p>
-                  <div className="w-full overflow-x-auto mt-8">
-                    <BarChart
-                      style={{
-                        width: "100%",
-                        maxHeight: "70vh",
-                        aspectRatio: 1.618,
-                      }}
-                      responsive
-                      data={data}
-                      margin={{
-                        top: 5,
-                        right: 0,
-                        left: 0,
-                        bottom: 5,
-                      }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "#000",
-                        }}
-                      />
-                      <XAxis dataKey="mac" />
-                      <YAxis width="auto" />
+                  <option value={"GB"}>GB</option>
+                  <option value={"MB"}>MB</option>
+                  <option value={"KB"}>KB</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
-                      <Legend />
-                      <Bar
-                        dataKey="downloads"
-                        radius={[10, 10, 0, 0]}
-                        fill="#FFBD76"
-                      />
-                      <Bar
-                        dataKey="uploads"
-                        radius={[10, 10, 0, 0]}
-                        fill="#003F47"
-                      />
-                    </BarChart>
-                  </div>
-
-                  <div className="w-full overflow-x-auto mt-10">
-                    <BarChart
-                      data={data}
-                      layout="vertical"
-                      style={{
-                        width: "100%",
-                        maxHeight: "70vh",
-                        aspectRatio: 1.618,
-                      }}
-                      responsive
-                      barCategoryGap={8}
-                      margin={{
-                        top: 10,
-                        right: 0,
-                        left: 0,
-                        bottom: 10,
-                      }}
-                    >
-                      <YAxis
-                        type="category"
-                        dataKey="mac"
-                        width="auto"
-                        tick={{ fontSize: 11 }}
-                      />
-
-                      <XAxis
-                        type="number"
-                        width="auto"
-                        tick={{ fontSize: 11 }}
-                      />
-
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-
-                      <Legend />
-
-                      <Bar
-                        name="Downloads"
-                        dataKey="downloads"
-                        fill="#FFBD76"
-                        radius={[0, 5, 5, 0]}
-                      />
-
-                      <Bar
-                        name="Uploads"
-                        dataKey="uploads"
-                        fill="#003F47"
-                        radius={[0, 5, 5, 0]}
-                      />
-                    </BarChart>
-                  </div>
+          {Object.keys(fetchedRecord).length > 0 &&
+            Object.entries(fetchedRecord).map(([router, data]) => (
+              <div
+                className="w-full md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden"
+                key={router}
+              >
+                <p>{router}</p>
+                <div className="w-full overflow-x-auto mt-8">
+                  <BarChart
+                    style={{
+                      width: "100%",
+                      maxHeight: "70vh",
+                      aspectRatio: 1.618,
+                    }}
+                    responsive
+                    data={data.map((d) => ({
+                      ...d,
+                      uploads: bytecon(d.uploads, "graph", segmentFilter),
+                      downloads: bytecon(d.downloads, "graph", segmentFilter),
+                    }))}
+                    margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <Tooltip contentStyle={{ backgroundColor: "#000" }} />
+                    <XAxis dataKey="mac" />
+                    <YAxis width="auto" />
+                    <Legend />
+                    <Bar
+                      dataKey="downloads"
+                      radius={[10, 10, 0, 0]}
+                      fill="#FFBD76"
+                    />
+                    <Bar
+                      dataKey="uploads"
+                      radius={[10, 10, 0, 0]}
+                      fill="#003F47"
+                    />
+                  </BarChart>
                 </div>
-              ))}
+
+                <div className="w-full overflow-x-auto mt-8">
+                  <BarChart
+                    style={{
+                      width: "100%",
+                      maxWidth: "700px",
+                      maxHeight: "70vh",
+                      aspectRatio: 1.618,
+                    }}
+                    responsive
+                    data={data.map((d) => ({
+                      ...d,
+                      uploads: bytecon(d.uploads, "graph", segmentFilter),
+                      downloads: bytecon(d.downloads, "graph", segmentFilter),
+                    }))}
+                    margin={{ top: 20, right: 0, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid />
+                    <XAxis dataKey="mac" niceTicks="snap125" />
+                    <YAxis width="auto" niceTicks="snap125" />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="uploads" stackId="a" fill="#003F47" />
+                    <Bar dataKey="downloads" stackId="a" fill="#FFBD76" />
+                  </BarChart>
+                </div>
+
+                <div className="w-full overflow-x-auto mt-10">
+                  <BarChart
+                    data={data.map((d) => ({
+                      ...d,
+                      uploads: bytecon(d.uploads, "graph", segmentFilter),
+                      downloads: bytecon(d.downloads, "graph", segmentFilter),
+                    }))}
+                    layout="vertical"
+                    style={{
+                      width: "100%",
+                      maxHeight: "70vh",
+                      aspectRatio: 1.618,
+                    }}
+                    responsive
+                    barCategoryGap={8}
+                    margin={{ top: 10, right: 0, left: 0, bottom: 10 }}
+                  >
+                    <YAxis
+                      type="category"
+                      dataKey="mac"
+                      width="auto"
+                      tick={{ fontSize: 11 }}
+                    />
+                    <XAxis type="number" width="auto" tick={{ fontSize: 11 }} />
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <Legend />
+                    <Bar
+                      name="Downloads"
+                      dataKey="downloads"
+                      fill="#FFBD76"
+                      radius={[0, 5, 5, 0]}
+                    />
+                    <Bar
+                      name="Uploads"
+                      dataKey="uploads"
+                      fill="#003F47"
+                      radius={[0, 5, 5, 0]}
+                    />
+                  </BarChart>
+                </div>
+              </div>
+            ))}
         </div>
       </div>
     </>
@@ -601,7 +687,25 @@ export default App;
   type Charting = {
     [Router: string]: chartFuckingData[];
   };
+  
 
+  function byteconold(bytes: number, usage: string, segment: string) {
+    if (bytes < 1000) {
+      return bytes;
+    } else if (bytes < 1000000) {
+      return usage === "graph" && segment === "KB"
+        ? bytes / 1000000
+        : `${(bytes / 1000000).toFixed(2)} kb`;
+    } else if (bytes < 1000000000) {
+      return usage === "graph" && segment === "MB"
+        ? bytes / 100000
+        : `${(bytes / 100000).toFixed(2)} mb`;
+    } else if (bytes < 1000000000000) {
+      return usage === "graph" && segment === "GB"
+        ? bytes / 1000000000
+        : `${(bytes / 1000000000).toFixed(2)} gb`;
+    }
+  }
           
           */
 }
