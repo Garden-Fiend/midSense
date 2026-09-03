@@ -100,6 +100,7 @@ function App() {
   const [listening, setListening] = useState(false);
   const [openRecord, setOpenRecord] = useState(false);
   const [filter, setFilter] = useState("");
+  const [searchFilter, setSearchFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
 
   useEffect(() => {
@@ -209,16 +210,22 @@ function App() {
                 <label className="border-2 p-2 rounded-xl whitespace-nowrap">
                   Gateway
                 </label>
-
                 <select
-                  className="border-b-2 p-2 w-full sm:w-auto"
-                  onChange={(e) => setFilter(e.target.value)}
+                  value={filter}
+                  onChange={(e) => {
+                    setFilter(e.target.value);
+                    setSearchFilter(e.target.value);
+                  }}
                 >
-                  {Object.keys(cumulate(rawData)).map((gateway) => (
-                    <option value={gateway} key={gateway}>
-                      {gateway}
-                    </option>
-                  ))}
+                  <option value="">All Gateways</option>
+
+                  {[...new Set(rawData.map((record) => record.router))].map(
+                    (gateway) => (
+                      <option value={gateway} key={gateway}>
+                        {gateway}
+                      </option>
+                    ),
+                  )}
                 </select>
               </div>
 
@@ -226,24 +233,29 @@ function App() {
                 type="text"
                 placeholder="Find a Gateway"
                 className="w-full border-2 p-3 rounded-xl"
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
               ></input>
 
-              <button className="p-3 bg-[#FFF6E9] text-[#0A171D] rounded-xl w-full sm:w-auto whitespace-nowrap">
+              <button
+                className="p-3 bg-[#FFF6E9] text-[#0A171D] rounded-xl w-full sm:w-auto whitespace-nowrap"
+                onClick={() => setFilter(searchFilter)}
+              >
                 Search
               </button>
             </div>
 
             {Object.entries(fetchedRecord).length > 0 ? (
-              <div>
+              <div className="overflow-auto max-h-60">
                 {Object.entries(fetchedRecord)
 
                   .map(([router, devices]) => (
                     <div className="border-2 mt-2" key={router}>
-                      <p className="place-self-center p-4 bg-[#003f47] w-full text-center">
+                      <p className="place-self-center p-4 w-full text-center">
                         {router}
                       </p>
 
-                      <div className="overflow-x-auto">
+                      <div className="overflow-x-auto bg-[#FFF6E9] text-[#0A171D]">
                         <table className="w-full min-w-[500px]">
                           <thead>
                             <tr>
@@ -296,7 +308,7 @@ function App() {
         </div>
 
         <div
-          className={`bg-[#FFF6E9] ${Object.keys(fetchedRecord).length > 0 ? "h-auto" : "h-screen"}`}
+          className={`bg-[#FFF6E9] rounded-t-4xl ${Object.keys(fetchedRecord).length > 0 ? "h-auto" : "h-screen"}`}
         >
           <div className="text-black px-4 sm:px-8 py-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
             <div className="text-xl sm:text-2xl font-bold">{filter}</div>
@@ -330,7 +342,7 @@ function App() {
           {Object.keys(fetchedRecord).length > 0 &&
             Object.entries(fetchedRecord).map(([router, data]) => (
               <div
-                className="w-full md:w-1/2 m-0 md:m-10 p-4 md:p-0 overflow-hidden"
+                className="md:w-full m-0 md:my-10 p-4 md:p-4 overflow-hidden"
                 key={router}
               >
                 <p>{router}</p>
@@ -371,7 +383,7 @@ function App() {
                   <BarChart
                     style={{
                       width: "100%",
-                      maxWidth: "700px",
+                      
                       maxHeight: "70vh",
                       aspectRatio: 1.618,
                     }}
@@ -431,6 +443,7 @@ function App() {
                       fill="#003F47"
                       radius={[0, 5, 5, 0]}
                     />
+                    <Tooltip></Tooltip>
                   </BarChart>
                 </div>
               </div>
