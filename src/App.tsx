@@ -1,3 +1,4 @@
+import { HugeiconsIcon } from "@hugeicons/react";
 import "./index.css";
 import { useEffect, useState } from "react";
 import {
@@ -9,6 +10,7 @@ import {
   Tooltip,
   YAxis,
 } from "recharts";
+import { Router, RouterIcon } from "@hugeicons/core-free-icons";
 
 function App() {
   type device_stats = {
@@ -102,6 +104,7 @@ function App() {
   const [filter, setFilter] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+  const [dateTypeFilter, setDateTypeFilter] = useState("daily");
 
   useEffect(() => {
     if (!listening) {
@@ -315,9 +318,27 @@ function App() {
             <div className="flex flex-wrap gap-4">
               <div className="flex items-center gap-3">
                 <p className="border-2 p-3 rounded-xl bg-[#161618] text-white whitespace-nowrap">
-                  Date
+                  Date Unit
                 </p>
-                <input type="date" className="border-b-3 p-3"></input>
+                <select
+                  className="border-b-3 p-3"
+                  onChange={(e) => setDateTypeFilter(e.target.value)}
+                >
+                  <option value={"month"}>Month</option>
+
+                  <option value={"week"}>Week</option>
+                  <option value={"daily"}>Daily</option>
+                </select>
+
+                <div>
+                  {dateTypeFilter === "daily" ? (
+                    <input type="date" className="border-b-3 p-3" />
+                  ) : dateTypeFilter === "week" ? (
+                    <input type="week" className="border-b-3 p-3" />
+                  ) : (
+                    <input type="month" className="border-b-3 p-3" />
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-3">
@@ -345,7 +366,11 @@ function App() {
                 className="md:w-full m-0 md:my-10 p-4 md:p-4 overflow-hidden"
                 key={router}
               >
-                <p>{router}</p>
+                <div className="flex items-start gap-2 bg-[#161618] p-2 rounded-t-xl">
+                  <HugeiconsIcon icon={RouterIcon} className="" />
+                  <p className="text- font-bold text-lg">{router}</p>
+                </div>
+
                 <div className="w-full overflow-x-auto mt-8">
                   <BarChart
                     style={{
@@ -383,7 +408,7 @@ function App() {
                   <BarChart
                     style={{
                       width: "100%",
-                      
+
                       maxHeight: "70vh",
                       aspectRatio: 1.618,
                     }}
